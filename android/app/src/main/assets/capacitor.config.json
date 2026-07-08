@@ -1,0 +1,11 @@
+{
+	"appId": "com.dawlance.refdesign",
+	"appName": "RefDesign",
+	"webDir": "www",
+	"android": {
+		"allowMixedContent": false
+	},
+	"server": {
+		"androidScheme": "https"
+	}
+}

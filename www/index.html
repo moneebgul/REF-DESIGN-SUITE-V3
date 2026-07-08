@@ -1,0 +1,1002 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#11202f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RefDesign">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>RefDesign — guided refrigerator cooling-system designer</title>
+<style>
+:root{
+  --bg:#eef1f4;--panel:#fff;--panel2:#f5f8fa;--line:#dce2e8;--line2:#eaeef2;
+  --ink:#11202f;--muted:#536579;--faint:#8a97a6;
+  --cyan:#0a7ea4;--cyan-s:#ddeff5;--ink-cyan:#075d77;
+  --heat:#dc8722;--heat-s:#fbf0dd;--ok:#1d7a4b;--ok-s:#e7f4ed;--warn:#bb3b11;--warn-s:#fbe7e0;--vio:#6d4aa6;--vio-s:#ede7f6;
+  --A:#00a651;--B:#50b848;--C:#bfd730;--D:#fff200;--E:#fdb913;--F:#f37021;--G:#ed1c24;
+  --mono:"SF Mono",ui-monospace,"Roboto Mono",Menlo,Consolas,monospace;
+  --sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5}
+.app{max-width:1120px;margin:0 auto;padding:0 18px 70px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px 0 12px;border-bottom:2px solid var(--ink)}
+header.top .brand{display:flex;align-items:baseline;gap:9px}
+header.top h1{font-size:18px;margin:0;font-weight:750;letter-spacing:-.01em}header.top h1 b{color:var(--cyan)}
+header.top .tagline{font-size:11.5px;color:var(--faint);font-family:var(--mono)}
+/* stepper */
+.stepbar{display:flex;gap:6px;overflow-x:auto;padding:14px 0 4px;position:sticky;top:0;background:var(--bg);z-index:20}
+.stepbar button{flex:0 0 auto;display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel);
+  color:var(--muted);border-radius:8px;padding:8px 12px;cursor:pointer;font-family:var(--sans);font-size:12.5px;font-weight:600}
+.stepbar button .num{width:20px;height:20px;border-radius:50%;background:var(--panel2);color:var(--faint);font-family:var(--mono);
+  font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:700;border:1px solid var(--line)}
+.stepbar button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.stepbar button.on .num{background:var(--cyan);color:#fff;border-color:var(--cyan)}
+.stepbar button.done .num{background:var(--ok);color:#fff;border-color:var(--ok)}
+.lay{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;margin-top:14px}
+@media(max-width:880px){.lay{grid-template-columns:1fr}}
+.colR{position:sticky;top:64px}@media(max-width:880px){.colR{position:static}}
+.stepcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.stepcard .head{padding:16px 20px 4px}
+.stepcard .head .eyebrow{font-family:var(--mono);font-size:11px;color:var(--cyan);font-weight:700;letter-spacing:.05em}
+.stepcard .head h2{margin:3px 0 2px;font-size:19px;font-weight:700;letter-spacing:-.01em}
+.stepcard .head p{margin:0;color:var(--muted);font-size:13px}
+.stepbody{padding:14px 20px 4px}
+.step{display:none}.step.on{display:block}
+/* clean single field per line */
+.field{margin:0 0 16px;max-width:440px}
+.field>label{display:block;font-size:13.5px;font-weight:600;margin-bottom:5px}
+.field>label .u{color:var(--faint);font-family:var(--mono);font-size:11px;font-weight:400;margin-left:5px}
+.field .help{font-size:11.5px;color:var(--faint);margin-top:5px;line-height:1.5}
+.field input[type=number],.field input[type=text],.field select{width:100%;padding:9px 11px;border:1px solid var(--line);
+  border-radius:8px;background:#fff;font-family:var(--mono);font-size:13.5px;color:var(--ink)}
+.field input:focus,.field select:focus{outline:2px solid var(--cyan-s);border-color:var(--cyan)}
+.field.inline{display:grid;grid-template-columns:1fr 150px;align-items:center;gap:10px;max-width:440px}
+.field.inline>label{margin-bottom:0}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;max-width:440px}
+.seg button{flex:1;border:0;border-right:1px solid var(--line);background:#fff;padding:9px 6px;font-size:12.5px;color:var(--muted);cursor:pointer;font-family:var(--sans)}
+.seg button:last-child{border-right:0}.seg button.on{background:var(--cyan);color:#fff;font-weight:650}
+.checks{display:flex;gap:16px;flex-wrap:wrap;font-size:13px}.checks label{display:flex;gap:6px;align-items:center;cursor:pointer}.checks input{width:auto}
+.subhead{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line2)}
+.adv{margin-top:6px}.adv>summary{cursor:pointer;font-size:12.5px;color:var(--cyan);font-weight:600;list-style:none;padding:6px 0}
+.adv>summary::before{content:"▸ ";font-family:var(--mono)}.adv[open]>summary::before{content:"▾ "}
+.callout{background:var(--vio-s);border:1px solid #d8cdee;border-left:3px solid var(--vio);border-radius:8px;padding:10px 13px;font-size:12.5px;color:#4a3470;margin-bottom:14px}
+.callout b{color:var(--vio)}
+/* tables for repeating data */
+table.dt{width:100%;border-collapse:collapse;font-size:12px}
+table.dt th{text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.02em;padding:6px 5px;border-bottom:1px solid var(--line);font-weight:700}
+table.dt td{padding:4px 5px;border-bottom:1px solid var(--line2)}
+table.dt input,table.dt select{width:100%;padding:6px 5px;border:1px solid var(--line);border-radius:6px;font-family:var(--mono);font-size:12px;background:#fff}
+.delc{border:0;background:none;color:var(--faint);cursor:pointer;font-size:16px}.delc:hover{color:var(--G)}
+.addbtn{margin-top:10px;border:1px dashed var(--line);background:#fff;color:var(--cyan);padding:8px;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:650}
+.addbtn:hover{background:var(--cyan-s)}
+/* nav */
+.stepnav{display:flex;justify-content:space-between;gap:10px;padding:16px 20px;border-top:1px solid var(--line2);margin-top:10px}
+.stepnav button{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:10px 18px;cursor:pointer;font-size:13.5px;font-weight:600;font-family:var(--sans)}
+.stepnav button.primary{background:var(--cyan);color:#fff;border-color:var(--cyan)}
+.stepnav button:disabled{opacity:.4;cursor:default}
+/* live results */
+.live{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.live h3{margin:0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:11px 14px;background:var(--panel2);border-bottom:1px solid var(--line)}
+.live .lb{padding:14px}
+.classbadge{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.classbadge .big{font-family:var(--mono);font-size:34px;font-weight:750;width:60px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:8px;color:#10202a}
+.classbadge .eei{font-family:var(--mono);font-size:12px;color:var(--muted)}.classbadge .eei b{color:var(--ink);font-size:14px}
+.classbadge .ae{font-size:11px;color:var(--faint);margin-top:2px}
+.lk{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line2);font-size:12.5px}
+.lk:last-child{border-bottom:0}.lk .v{font-family:var(--mono);font-weight:650}
+.lflag{font-size:11.5px;padding:8px 10px;border-radius:7px;margin-top:10px;display:flex;gap:7px}
+.lflag.warn{background:var(--warn-s);color:var(--warn)}.lflag.ok{background:var(--ok-s);color:var(--ok)}.lflag .ic{font-weight:800}
+/* results step */
+table.data{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11.5px;margin-bottom:8px}
+table.data th{text-align:right;color:var(--muted);font-weight:650;padding:5px 6px;border-bottom:1px solid var(--line);font-size:9.5px;text-transform:uppercase}
+table.data th:first-child,table.data td:first-child{text-align:left}
+table.data td{padding:4px 6px;border-bottom:1px solid var(--line2);text-align:right}
+table.data tr.tot td{border-top:1.5px solid var(--line);font-weight:700;border-bottom:0}table.data tr.hl td{background:var(--cyan-s)}table.data tr.sub td{color:var(--faint);font-size:10.5px}
+.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:620px){.rgrid{grid-template-columns:1fr}}
+.rblock h4{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 8px}
+.schematic{background:linear-gradient(180deg,#f8fbfc,#eef4f7);border:1px solid var(--line);border-radius:10px;padding:8px;margin-top:12px}
+.dimlbl{font-family:var(--mono);font-size:9.5px;fill:var(--muted)}
+.heatflow{stroke:var(--heat);stroke-width:2;stroke-dasharray:4 4;animation:flow 1.1s linear infinite}@keyframes flow{to{stroke-dashoffset:-16}}
+.rl{fill:none;stroke-width:3;stroke-linecap:round;stroke-dasharray:5 5;animation:flow 0.9s linear infinite}
+.rl-hot{stroke:#e23b1e}.rl-warm{stroke:#dc8722}.rl-cold{stroke:#2f7fd2}.rl-suc{stroke:#37b0c9}
+.coil{fill:none;stroke-width:2.4}.coil-hot{stroke:#e23b1e}.coil-cold{stroke:#2f7fd2}
+.wall{fill:var(--cyan-s);stroke:var(--cyan);stroke-width:1}.liner{fill:#fff;stroke:var(--line);stroke-width:1}.mr{fill:var(--heat-s);stroke:var(--heat);stroke-width:1}.cond{stroke:var(--warn);stroke-width:3;stroke-linecap:round}
+@media(prefers-reduced-motion:reduce){.heatflow{animation:none}}
+.scale .bar{display:flex;align-items:center;height:17px;font-family:var(--mono);font-size:10px;margin-bottom:2px}
+.scale .bar .ltr{width:21px;color:#10202a;font-weight:700;text-align:center;height:17px;line-height:17px;border-radius:3px 0 0 3px}
+.scale .bar .arrow{height:0;width:0;border-top:8.5px solid transparent;border-bottom:8.5px solid transparent}
+.scale .bar .rng{margin-left:6px;color:var(--faint)}.scale .bar.active .rng{color:var(--ink);font-weight:650}.scale .bar.dim{opacity:.3}
+.eq{font-family:var(--mono);background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:6px;padding:9px 12px;margin:8px 0;font-size:11.5px;overflow-x:auto}
+.ref{font-size:11px;color:var(--faint);font-family:var(--mono);line-height:1.5}
+footer{margin-top:18px;font-size:10.5px;color:var(--faint);border-top:1px solid var(--line);padding-top:10px;line-height:1.6}
+#reportView{display:none}
+@media print{.app{display:none!important}#reportView{display:block!important}@page{margin:12mm}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><h1>Ref<b>Design</b></h1><span class="tagline">guided cooling-system designer · map-based · EU 2019/2016</span></div>
+    <div class="tagline" id="modeTag">—</div>
+  </header>
+
+  <div class="stepbar" id="stepbar"></div>
+
+  <div class="lay">
+    <div>
+      <div class="stepcard">
+        <div class="head"><div class="eyebrow" id="stEyebrow">STEP 1 / 8</div><h2 id="stTitle">Appliance</h2><p id="stDesc">What are we designing?</p></div>
+        <div class="stepbody">
+
+          <!-- STEP 1 APPLIANCE -->
+          <div class="step on" data-step="0">
+            <div class="field inline"><label>Model / project name</label><input type="text" id="modelName" placeholder="e.g. TM-260 top-mount" value=""></div>
+            <div class="field inline"><label>Target net volume <span class="u">L</span></label><input type="number" id="targetVol" value="0" step="1"></div>
+            <div class="field inline"><label>Target freezer net volume <span class="u">L</span></label><input type="number" id="targetFrz" value="0" step="1"></div>
+            <div class="field"><div class="help">Optional design targets (0 = none). The Results page and PDF report compare the achieved net volume against these.</div></div>
+            <div class="field"><label>Analysis mode</label><div class="seg" id="seg-mode"></div>
+              <div class="help">Energy + EEI shows the EU class. Cooling design hides the rating and focuses on capacity &amp; run-time.</div></div>
+            <div class="field"><label>System architecture</label><div class="seg" id="seg-arch"></div>
+              <div class="help">Serial / single-evaporator: one loop, one common T<sub>e</sub> set by the <b>coldest</b> compartment (the freezer) — warmer compartments are cooled at that same cold T<sub>e</sub>, so their effective approach is large (the serial penalty). Parallel / dual-loop: each compartment cooled at its own T<sub>e</sub> with an independent run-time.</div></div>
+            <div class="field"><label>Installation</label><div class="seg" id="seg-inst"></div></div>
+            <div class="field"><label>Cooling mode</label><div class="seg" id="seg-defrost"></div></div>
+            <div class="field inline"><label>Climate class</label><select id="climate"><option value="SN">SN — 10–32 °C</option><option value="N" selected>N — 16–32 °C</option><option value="ST">ST — 16–38 °C</option><option value="T">T — 16–43 °C</option></select></div>
+            <div class="field inline"><label>External doors / drawers <span class="u">count</span></label><input type="number" id="ndoors" value="2" min="1"></div>
+          </div>
+
+          <!-- STEP 2 COMPARTMENTS -->
+          <div class="step" data-step="1">
+            <p style="color:var(--muted);margin-top:0"><b>Target</b> is the cycling set-point. <b>Approach</b> is how much colder the coil runs than the compartment, so <b>T<sub>e</sub> = target − approach</b> (shown, drives the compressor map). In <b>serial / single-evaporator</b> mode every compartment shares the coldest T<sub>e</sub>, so warmer compartments show their large <b>effective</b> approach (Δeff) and their own approach input is greyed — only the coldest compartment's approach sets the loop.</p>
+            <table class="dt"><thead><tr><th>Name</th><th>Type</th><th>Target °C</th><th>Approach K</th><th>T<sub>e</sub> °C</th><th></th></tr></thead><tbody id="compTargets"></tbody></table>
+            <button class="addbtn" id="addComp">+ add compartment</button>
+          </div>
+
+          <!-- STEP 3 CABINET -->
+          <div class="step" data-step="2">
+            <div class="subhead">External envelope</div>
+            <div class="field inline"><label>Width W₀ <span class="u">mm</span></label><input type="number" id="extW" value="595"></div>
+            <div class="field inline"><label>Depth D₀ <span class="u">mm</span></label><input type="number" id="extD" value="650"></div>
+            <div class="field inline"><label>Height H₀ <span class="u">mm</span></label><input type="number" id="extH" value="1800"></div>
+            <div class="subhead">Machine room (compressor compartment)</div>
+            <div class="field inline"><label>Width <span class="u">mm</span></label><input type="number" id="mrW" value="430"></div>
+            <div class="field inline"><label>Depth <span class="u">mm</span></label><input type="number" id="mrD" value="280"></div>
+            <div class="field inline"><label>Height <span class="u">mm</span></label><input type="number" id="mrH" value="240"></div>
+            <div class="field inline"><label>Machine-room temperature <span class="u">°C</span></label><input type="number" id="mrT" value="45"></div>
+            <div class="field"><div class="help">The machine-room temperature is applied directly to the compressor-compartment top &amp; back walls — the hottest region of the cabinet.</div></div>
+            <div class="subhead">Ambient sweep</div>
+            <div class="field"><label>Ambients analysed <span class="u">°C</span></label><input type="text" id="ambList" value="16, 25, 32">
+              <div class="help">Auto-filled from the climate-class ceiling (SN/N → 32, ST → 38, T → 43). Edit freely.</div></div>
+            <div class="field inline"><label>Design ambient for KPIs <span class="u">°C</span></label><select id="designAmb"></select></div>
+            <div class="field"><div class="help">All design read-outs (capacity, run-time, heat-gain breakdown, energy components) are evaluated at this ambient — set to your climate ceiling (43 °C for T-class). Note: the EU <b>energy class</b> is fixed by regulation at 16/32 °C and does not change with this.</div></div>
+          </div>
+
+          <!-- STEP 4 INSULATION -->
+          <div class="step" data-step="3">
+            <div class="subhead">Polyurethane foam</div>
+            <div class="field inline"><label>PU conductivity k <span class="u">W/m·K</span></label><input type="number" id="puK" value="0.0205" step="0.001"></div>
+            <div class="field inline"><label>PU density <span class="u">kg/m³</span></label><input type="number" id="puRho" value="36"></div>
+            <div class="field inline"><label>Door foam density <span class="u">kg/m³</span></label><input type="number" id="doorRho" value="40"></div>
+            <div class="field inline"><label>Glass-door U-value <span class="u">W/m²K</span></label><input type="number" id="glassU" value="3.0" step="0.1"></div>
+            <div class="field"><div class="help">Use aged k (~0.0205–0.022); foam drifts up over its first year. <b>Door foam density</b> is often higher than the cabinet (denser skins) — set per your doors. <b>Glass-door U</b> applies only to compartments whose door is set to <i>glass</i> below (single ≈ 5.7, double ≈ 2.8, triple ≈ 1.8 W/m²K); a glass door carries no PU foam.</div></div>
+            <div class="subhead">Per-wall PU thickness (mm)</div>
+            <table class="dt"><thead><tr><th>Comp</th><th>side</th><th>top</th><th>bot</th><th>back</th><th>door</th></tr></thead><tbody id="geoBody"></tbody></table>
+            <div class="field" style="margin-top:6px"><div class="help">Internal liner W×D×H is taken from the compartments; per-wall thicknesses are here. Conduction uses the mean of inner and outer wall area.</div></div>
+            <table class="dt" style="margin-top:6px"><thead><tr><th colspan="8" style="text-transform:none;font-size:11px;color:var(--ink)">Internal liner dimensions (mm), net fraction, ABS liner &amp; gasket frame length</th></tr><tr><th>Comp</th><th>W</th><th>D</th><th>H</th><th>net</th><th>liner</th><th>door liner</th><th>gasket L</th></tr></thead><tbody id="geoDims"></tbody></table>
+            <div class="field"><div class="help">Gasket frame length (mm): leave <b>0</b> to auto-compute from the door flange perimeter (liner opening + wall build-up). Enter a measured value to override — the gasket seals on the flange, not the liner edge, so the flange perimeter is the correct length.</div></div>
+            <table class="dt" style="margin-top:6px"><thead><tr><th colspan="4" style="text-transform:none;font-size:11px;color:var(--ink)">Doors — variant &amp; actual size (for real door heat gain &amp; foam mass)</th></tr><tr><th>Comp</th><th>door type</th><th>door W</th><th>door H</th></tr></thead><tbody id="doorTbl"></tbody></table>
+            <div class="field"><div class="help">Door type: <b>metal</b> = steel + PU foam (uses the "door" PU thickness above, at door foam density); <b>glass</b> = glazed door (uses the Glass-door U-value, no PU foam). Door W/H (mm): the real door slab size — leave <b>0</b> to auto-size from the opening + flange. These drive both the door heat gain and the door foam mass.</div></div>
+            <div class="field" style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <button type="button" id="deriveBtn" style="border:1px solid var(--cyan);background:var(--cyan);color:#fff;border-radius:8px;padding:7px 13px;cursor:pointer;font-size:12px;font-weight:650">⟳ Derive inner W / D / H from cabinet + walls</button>
+              <span id="fitChk" class="help" style="margin:0;flex:1;min-width:220px"></span>
+            </div>
+            <div class="field"><div class="help">W and D are fully determined by the cabinet envelope minus each wall (shell + PU + liner), so they're filled automatically. For height, the tool keeps the upper compartment height(s) you set and fills the <b>bottom compartment</b> as the remaining stack — the freezer/FF split is your design choice, not a derivation.</div></div>
+            <div class="field" style="margin-top:6px"><div class="help">A <b>cellar</b> (≈12 °C) or chill zone sits <i>inside</i> the fresh-food cabinet — give it its own height here and reduce the fresh-food height by the same amount, so the heights stack to the cabinet. The volume readout on the right confirms the allocation. <b>Net</b> = gross × this fraction (evaporator cover, shelves, trim).</div></div>
+            <div class="subhead">VIP panels (optional)</div>
+            <table class="dt"><thead><tr><th>Comp</th><th>Surface</th><th>W</th><th>H</th><th>t</th><th>k</th><th>qty</th><th></th></tr></thead><tbody id="vipBody"></tbody></table>
+            <button class="addbtn" id="addVip">+ add VIP panel</button>
+            <div class="subhead">Edge &amp; gasket</div>
+            <div class="field inline"><label>Edge / mullion uplift <span class="u">fraction</span></label><input type="number" id="edgeFrac" value="0.17" step="0.01"></div>
+            <div class="field"><div class="help">Extra edge/flange conduction beyond 1-D walls. Anchored to ACRC TR-21 (18 ft³ top-mount): ~<b>0.17</b> base (steel flanges + door seal, no anti-sweat). The anti-sweat condenser loop below is modelled <i>separately</i>, so leave this at the base and don't also inflate it for the loop. Calibrate against a measured cabinet UA when available.</div></div>
+            <div class="field inline"><label>Gasket U — fresh food <span class="u">W/m·K</span></label><input type="number" id="gaskFF" value="0.027" step="0.005"></div>
+            <div class="field inline"><label>Gasket U — freezer <span class="u">W/m·K</span></label><input type="number" id="gaskFRZ" value="0.040" step="0.005"></div>
+            <div class="field"><div class="help">Edge losses run ~30% of total cabinet load (CFD/RHL studies); the explicit gasket carries part, the uplift the rest. Calibrate to a reverse-heat-leak test.</div></div>
+            <div class="subhead">Wall construction &amp; temperature profile</div>
+            <div class="field"><label>Film coefficients (h)</label><div class="seg" id="seg-hmodel"></div>
+              <div class="help"><b>Computed</b>: outer and (static) inner h from a Rayleigh natural-convection correlation + surface radiation, recomputed per ambient and per wall — exact and ambient-responsive. <b>Fixed</b>: the constants under Advanced. No-frost inner surfaces use the forced value either way (fan-driven, not ΔT-driven).</div></div>
+            <div class="field inline"><label>Inspect wall</label><select id="xwallSel"></select></div>
+            <div class="schematic"><svg id="xsecSvg" viewBox="0 0 360 240" width="100%"></svg></div>
+            <div class="field"><div class="help" id="xsecNote"></div></div>
+            <details class="adv"><summary>Advanced material properties (defaults are fine)</summary>
+              <div class="field inline"><label>Outer film h <span class="u">W/m²K</span></label><input type="number" id="hout" value="9.37" step="0.1"></div>
+              <div class="field inline"><label>Inner film h — fresh food <span class="u">W/m²K</span></label><input type="number" id="hinFF" value="10"></div>
+              <div class="field inline"><label>Inner film h — freezer <span class="u">W/m²K</span></label><input type="number" id="hinFRZ" value="15"></div>
+              <div class="field inline"><label>Liner k <span class="u">W/m·K</span></label><input type="number" id="linerK" value="0.17" step="0.01"></div>
+              <div class="field inline"><label>Liner thickness <span class="u">mm</span></label><input type="number" id="linerT" value="3.0" step="0.5"></div>
+              <div class="field inline"><label>Outer sheet k <span class="u">W/m·K</span></label><input type="number" id="shellK" value="41.5"></div>
+              <div class="field inline"><label>Outer sheet thickness <span class="u">mm</span></label><input type="number" id="shellT" value="0.6" step="0.1"></div>
+            </details>
+          </div>
+
+          <!-- STEP 5 COOLING -->
+          <div class="step" data-step="4">
+            <div class="field inline"><label>Refrigerant <span class="u">selection aid</span></label><select id="refrig"><option value="R600a" selected>R600a — isobutane</option><option value="R290">R290 — propane</option><option value="R134a">R134a — legacy</option></select></div>
+            <div class="field"><div class="help">Performance is driven by the compressor map, not a refrigerant cycle. This only labels the LBP comparison in Results.</div></div>
+            <div class="field inline"><label>Evaporator type</label><select id="evapType"><option value="rollbond">Roll-bond / plate (static)</option><option value="wiretube">Wire-on-tube (static)</option><option value="fintube">Fin-tube (forced)</option></select></div>
+            <div class="subhead">Condenser</div>
+            <div class="field inline"><label>Condenser type</label><select id="condType"><option value="forced">Coil + fan (forced, in M/C room)</option><option value="staticwire">Static wire-tube (rear)</option><option value="skin">Skin / panel (bonded to shell)</option></select></div>
+            <div class="field inline"><label>Condensing approach above ambient <span class="u">K</span></label><input type="number" id="cdApp" value="13"></div>
+            <div class="field"><div class="help">Sets the condensing temperature T<sub>c</sub> = ambient + approach, which the compressor map is read at.</div></div>
+            <div class="field inline"><label>Anti-sweat condenser loop</label><label style="font-weight:400;font-size:12px"><input type="checkbox" id="asCondOn" style="width:auto;margin-right:6px">around door aperture</label></div>
+            <div id="asCondWrap" style="display:none">
+              <div class="field inline"><label>Loop conductance to interior <span class="u">W/m·K</span></label><input type="number" id="asCondU" value="0.015" step="0.005"></div>
+              <div class="field"><div class="help">A condenser-outlet tube run around the door flange to prevent sweating. Its heat (at T<sub>c</sub> = ambient + approach) leaks back through the steel flange into the compartments — a <b>parasitic load the compressor must remove, with no extra kWh</b> (it's refrigerant-fed). Conductance × flange perimeter × (T<sub>loop</sub> − interior). Presets: tube in the <b>outer shell flange</b> ≈ 0.015 (current design); tube in a <b>liner cavity contacting the shell</b> ≈ 0.04 (deeper into the box → more to interior). Calibrate against a measured cabinet.</div></div>
+            </div>
+            <div id="staticWrap" style="display:none">
+              <div class="field inline"><label>Back-channel gap <span class="u">mm</span></label><input type="number" id="chanGap" value="32"></div>
+              <div class="field"><div class="help">A rear wire-tube condenser stands off the back wall by this gap. The tool computes the <b>channel-air temperature rise</b> from the instantaneous condenser duty (map capacity + power) and stack-driven convection up the gap, applies it to the <b>whole</b> back wall, and varies it with ambient. The computed rise is shown in Results → Performance.</div></div>
+            </div>
+            <div id="skinWrap" style="display:none">
+              <div class="field inline"><label>Panel / skin surface temperature <span class="u">°C</span></label><input type="number" id="panelTemp" value="50"></div>
+              <div class="field"><div class="help">The actual bonded-condenser surface temperature. This becomes the outer boundary on the walls you select below (instead of ambient) — the real skin-condenser heat penalty. Typically a few K above condensing temperature.</div></div>
+              <div class="field"><label>Panel on which surfaces?</label><div class="checks" id="skinSurf">
+                <label><input type="checkbox" data-s="back">Back</label><label><input type="checkbox" data-s="left">Left side</label><label><input type="checkbox" data-s="right">Right side</label></div></div>
+              <div class="field inline"><label>Vertical coverage</label><select id="skinCov"><option value="all">All compartments</option><option value="ff">Fresh-food side only</option><option value="fz">Freezer side only</option></select></div>
+            </div>
+            <div class="subhead">Import coil result <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--faint)">— from RefDesign Coil</span></div>
+            <div class="field"><div class="help">Designed the coils in <b>RefDesign Coil</b>? Paste its export here to set T<sub>e</sub> and T<sub>c</sub> from your real heat-exchanger geometry instead of assumed approaches. It sets the condenser approach and the coldest compartment's evaporator approach.</div>
+              <textarea id="coilImport" placeholder='{ "source":"RefDesign Coil", ... }' style="width:100%;height:70px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);font-family:var(--mono);font-size:11px;padding:8px;color:var(--ink);resize:vertical"></textarea>
+              <button id="coilImportBtn" style="border:1px solid var(--cyan);background:var(--cyan);color:#fff;border-radius:8px;padding:8px 15px;cursor:pointer;font-size:12.5px;font-weight:650;margin-top:8px">Apply coil result</button>
+              <span id="coilImportMsg" style="font-size:12px;margin-left:8px"></span></div>
+          </div>
+
+          <!-- STEP 6 COMPRESSOR -->
+          <div class="step" data-step="5">
+            <div class="callout"><b>This is example data.</b> Replace every cell with your compressor's calorimeter map (capacity, input power at each T<sub>e</sub>/T<sub>c</sub>/rpm). The tool interpolates it to each operating point — this is what drives all performance and energy.</div>
+            <div class="field inline"><label>Compressor name / model</label><input type="text" id="compName" placeholder="e.g. Embraco EMX70CLC" value=""></div>
+            <div class="field"><label>Compressor type</label><div class="seg" id="seg-comp"></div></div>
+            <div class="field inline" id="rpmField"><label>Operating speed <span class="u">rpm</span></label><select id="rpmSel"></select></div>
+            <div class="subhead">Calorimeter map — fully editable</div>
+            <table class="dt" id="mapTbl"></table>
+            <button class="addbtn" id="addMapRow">+ add map point</button>
+            <div class="subhead">In-system correction (datasheet → your cabinet)</div>
+            <div class="field inline"><label>System capacity factor <span class="u">×</span></label><input type="number" id="capFac" value="1.00" step="0.01"></div>
+            <div class="field inline"><label>System power factor <span class="u">×</span></label><input type="number" id="pwFac" value="1.00" step="0.01"></div>
+            <div class="field"><div class="help">The supplier map is rated at a calorimeter standard (fixed return-gas, subcooling, no line ΔP). Your system delivers less at the same Te/Tc. These factors scale the interpolated capacity and power to in-system values (COP follows automatically). Calibrate from a reference point: capacity factor = measured cap ÷ map cap; power factor = measured power ÷ map power. Leave at 1.00 for raw rated-map behaviour.</div></div>
+          </div>
+
+          <!-- STEP 7 AUX -->
+          <div class="step" data-step="6">
+            <div class="subhead">Fans</div>
+            <div class="field inline"><label>Evaporator fan power <span class="u">W</span></label><input type="number" id="evFanW" value="2.0" step="0.1"></div>
+            <div class="field inline"><label>Evaporator fan runs</label><select id="evFanLink"><option value="rt">with compressor</option><option value="cont">continuously</option></select></div>
+            <div class="field inline"><label>Condenser fan power <span class="u">W</span></label><input type="number" id="cdFanW" value="2.5" step="0.1"></div>
+            <div class="field inline"><label>Condenser fan runs</label><select id="cdFanLink"><option value="rt">with compressor</option><option value="cont">continuously</option></select></div>
+            <div class="subhead">Internal circulation fans (optional — static cabinets)</div>
+            <div class="field"><div class="help">A circulation fan forces the compartment's inner surfaces from natural to forced convection. Captured automatically: (1) fan power added to energy; (2) forced inner film on that compartment's walls — note this slightly <i>raises</i> wall heat gain, since the cold wall couples to the air better. The cooling-performance <b>benefit</b> is on the evaporator side: forced air improves air-to-evaporator coupling, so set a <b>smaller evaporator approach</b> for that compartment (higher Te, better COP) — ideally from the coil tool. It also suppresses shelf condensation. Net energy rises or falls depending on the approach gain vs the fan power.</div></div>
+            <table class="dt"><thead><tr><th>Comp</th><th>fan</th><th>power W</th><th>runs</th></tr></thead><tbody id="circFans"></tbody></table>
+            <div class="subhead">Electronics &amp; lighting</div>
+            <div class="field inline"><label>Control board power <span class="u">W</span></label><input type="number" id="boardW" value="1.2" step="0.1"></div>
+            <div class="field inline"><label>Interior light power <span class="u">W</span></label><input type="number" id="lightW" value="1.5" step="0.1"></div>
+            <div class="field inline"><label>Light run-time <span class="u">%</span></label><input type="number" id="lightRT" value="3"></div>
+            <div class="subhead">Defrost (no-frost)</div>
+            <div class="field inline"><label>Defrost heater power <span class="u">W</span></label><input type="number" id="dfW" value="180"></div>
+            <div class="field inline"><label>On-time per defrost <span class="u">min</span></label><input type="number" id="dfMin" value="12"></div>
+            <div class="field inline"><label>Defrost interval <span class="u">h</span></label><input type="number" id="dfInt" value="10"></div>
+            <div class="field"><div class="help">Defrost energy = heater power × on-time ÷ interval, counted in every cooling mode. For static/manual defrost (no electric heater), set heater power to 0.</div></div>
+            <div class="subhead">Anti-sweat &amp; cover heaters</div>
+            <div class="field inline"><label>Anti-sweat heater power <span class="u">W</span></label><input type="number" id="asW" value="0" step="0.5"></div>
+            <div class="field inline"><label>Anti-sweat run-time <span class="u">%</span></label><input type="number" id="asRT" value="100"></div>
+            <div class="field inline"><label>Evap-cover heater power <span class="u">W</span></label><input type="number" id="ecW" value="0" step="0.5"></div>
+            <div class="field inline"><label>Evap-cover run-time <span class="u">%</span></label><input type="number" id="ecRT" value="100"></div>
+          </div>
+
+          <!-- STEP 8 RESULTS -->
+          <div class="step" data-step="7">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+              <button type="button" id="reportBtn" style="border:1px solid var(--cyan);background:var(--cyan);color:#fff;border-radius:8px;padding:9px 16px;cursor:pointer;font-size:13px;font-weight:650">⭳ Download PDF report</button>
+            </div>
+            <div class="rgrid">
+              <div class="rblock"><h4>Performance across ambients</h4><table class="data" id="perfTbl"></table></div>
+              <div class="rblock"><h4>Daily energy components <span id="eAmbTag" style="color:var(--faint);font-weight:400"></span></h4><table class="data" id="eBreak"></table>
+                <h4 style="margin-top:14px">Operating points <span id="opAmbTag" style="color:var(--faint);font-weight:400"></span></h4><table class="data" id="opTbl"></table></div>
+            </div>
+            <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:16px 0 8px">EU energy rating basis <span style="color:var(--faint);font-weight:400">— regulatory 16/32 °C</span></h4>
+            <table class="data" id="rateTbl"></table>
+            <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:16px 0 8px">Compartment volumes &amp; cabinet fit</h4>
+            <table class="data" id="volTbl"></table>
+            <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:16px 0 8px">Wall construction — PU thickness per wall &amp; door</h4>
+            <table class="data" id="puTbl"></table>
+            <h4 id="vipHdr" style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:16px 0 8px;display:none">Vacuum insulation panels (VIP)</h4>
+            <table class="data" id="vipResTbl"></table>
+            <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:16px 0 8px">PU foam quantity</h4>
+            <table class="data" id="foamTbl"></table>
+            <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:16px 0 8px">Per-wall heat-gain breakdown <span id="qAmbTag" style="color:var(--faint);font-weight:400"></span></h4>
+            <table class="data" id="qBreak"></table>
+            <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:16px 0 8px">Refrigerant — LBP comparison (selection aid)</h4>
+            <table class="data" id="lbpTbl"></table>
+            <details class="adv" style="margin-top:10px"><summary>Method &amp; references</summary>
+              <div class="eq">β = Q_load / Φ₀(T_e,T_c) ;  E_daily = Σ[P₀·β·24 + fan(β)] + Σ continuous·24 + ΔE_defrost/interval</div>
+              <p class="ref">Map-based pseudo-steady method (compressor run-time = heat gain ÷ cooling capacity). Heat gain U=1/(1/h_in+Σt/k+1/h_out), mean wall area, FF/FRZ inner h 10/15, PU k≈0.0205, gasket U FF 0.027 / FRZ 0.040 (typical industry defaults); edge ≈30% of load (CFD / reverse-heat-leak studies); foam aging 0.0195→0.0225 (Hueppe 2020); skin-condenser boundary US Pat. 4,114,065. EU SAE/EEI/class per Reg (EU) 2019/2016 Annex IV. Steady-state; no capillary/charge, airflow or PCM dynamics.</p>
+            </details>
+          </div>
+
+        </div>
+        <div class="stepnav"><button id="btnBack">← Back</button><button id="btnNext" class="primary">Next →</button></div>
+      </div>
+    </div>
+
+    <!-- LIVE RESULTS -->
+    <div class="colR">
+      <div class="live">
+        <h3>Live result <span id="liveAmb" style="float:right;color:var(--faint);font-weight:400">@ 32°C</span></h3>
+        <div class="lb">
+          <div class="classbadge" id="classbadge">
+            <div class="big" id="bigClass">–</div>
+            <div><div class="eei">EEI <b id="eeiVal">–</b> %</div><div class="ae" id="aeVal">AE – kWh/a</div></div>
+          </div>
+          <div class="scale" id="scale"></div>
+          <div style="margin-top:10px">
+            <div class="lk"><span>Total heat load</span><span class="v" id="kLoad">–</span></div>
+            <div class="lk"><span>Max loop run-time</span><span class="v" id="kDuty">–</span></div>
+            <div class="lk"><span>Daily energy (design amb)</span><span class="v" id="kEday">–</span></div>
+            <div class="lk"><span>Net volume</span><span class="v" id="kVol">–</span></div>
+            <div class="lk"><span>PU foam mass</span><span class="v" id="kFoam">–</span></div>
+          </div>
+          <div id="liveFlag"></div>
+          <div class="schematic"><svg id="cabSvg" viewBox="0 0 280 300" width="100%"></svg></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>RefDesign — guided, map-based refrigerator design estimator. Cabinet physics &amp; EU 2019/2016 rating first-principles; performance driven by your compressor calorimeter map (no assumed refrigerant cycle). Steady-state. Not a substitute for EN IEC 62552 measurement.</footer>
+</div>
+<div id="reportView"></div>
+
+<script>
+//===== refrigerant (LBP aid only) =====
+const REF={R600a:{M:58.12,NBP:261.40,hfgNBP:303,cpl:2.31,cpv:1.62,Tcrit:407.85,Pcrit:3629},
+ R290:{M:44.10,NBP:231.04,hfgNBP:425,cpl:2.54,cpv:1.67,Tcrit:369.89,Pcrit:4251},
+ R134a:{M:102.03,NBP:247.08,hfgNBP:217,cpl:1.42,cpv:0.89,Tcrit:374.21,Pcrit:4059}};
+const Ru=8.314,watson=(p,T)=>p.hfgNBP*Math.pow(Math.max(.01,(p.Tcrit-T)/(p.Tcrit-p.NBP)),0.38);
+const satP=(p,T)=>{const B=Math.log(p.Pcrit/101.325)/(1/p.NBP-1/p.Tcrit);return Math.exp(Math.log(101.325)+B/p.NBP-B/T);};
+function cycleLBP(n,TeC,TcC){const p=REF[n],Te=TeC+273.15,Tc=TcC+273.15,Rs=Ru/p.M*1000,sh=5,sc=5;
+ const h1=p.cpl*Te+watson(p,Te)+p.cpv*sh,h3=p.cpl*Tc-p.cpl*sc,qe=h1-h3;const cv=p.cpv-Rs/1000,g=p.cpv/cv,Pe=satP(p,Te),Pc=satP(p,Tc),T1=Te+sh;
+ const w=p.cpv*(T1*Math.pow(Pc/Pe,(g-1)/g)-T1)/0.65,rho=Pe*1000/(Rs*T1);return{qe,COP:qe/w,rho,volcap:qe*rho};}
+
+const TYPES={pantry:{l:'Pantry',Tc:17,Nc:75,Mc:0.12,grp:'unfrozen'},winestore:{l:'Wine storage',Tc:12,Nc:75,Mc:0.12,grp:'unfrozen'},
+ cellar:{l:'Cellar',Tc:12,Nc:75,Mc:0.12,grp:'unfrozen'},freshfood:{l:'Fresh food',Tc:4,Nc:75,Mc:0.12,grp:'unfrozen'},
+ chill:{l:'Chill',Tc:2,Nc:138,Mc:0.12,grp:'chill'},star2:{l:'2-star',Tc:-12,Nc:138,Mc:0.15,grp:'frozen'},
+ star3:{l:'3-star',Tc:-18,Nc:138,Mc:0.15,grp:'frozen'},freezer:{l:'Freezer 4★',Tc:-18,Nc:138,Mc:0.15,grp:'frozen'}};
+const SURF=['back','left','right','top','bottom','door'];
+const rc=Tc=>(24-Tc)/20,Ac=(g,a)=>g==='frozen'?(a?1.1:1):g==='chill'?(a?1.03:1):1,Dfac=n=>n<=2?1:n===3?1.02:n===4?1.035:1.05;
+const CLASSB=[[41,'A','--A'],[51,'B','--B'],[64,'C','--C'],[80,'D','--D'],[100,'E','--E'],[125,'F','--F'],[1e9,'G','--G']];
+const classOf=e=>{for(const[t,l,vv]of CLASSB)if(e<=t)return[l,vv];};
+const teOf=c=>c.Ttgt-(c.app??10);
+const v=id=>{const el=document.getElementById(id);return el?parseFloat(el.value)||0:0;},txt=id=>{const el=document.getElementById(id);return el?el.value:'';};
+
+let S={mode:'energy',arch:'single',inst:'freestanding',defrost:'static',comp:'fixed',hmodel:'computed',asCond:false,xwall:{ci:0,s:'door'},skin:{back:false,left:false,right:false,cov:'all'},
+ comps:[{id:1,name:'Freezer',type:'freezer',Ttgt:-18,app:7,W:480,D:560,H:520,pu:{side:62,top:62,bot:62,back:58,door:56},net:0.88,liner:3,doorLiner:4,gskL:0,doorType:'metal',doorW:0,doorH:0,fan:{on:false,W:2,link:'rt'}},
+  {id:2,name:'Fresh food',type:'freshfood',Ttgt:4,app:10,W:480,D:560,H:1000,pu:{side:48,top:48,bot:48,back:42,door:44},net:0.92,liner:3,doorLiner:3.5,gskL:0,doorType:'metal',doorW:0,doorH:0,fan:{on:false,W:2,link:'rt'}}],
+ vips:[],
+ map:[{rpm:1300,Te:-15,Tc:35,cap:94.97,pw:27.12},{rpm:1300,Te:-20,Tc:35,cap:74.78,pw:24.55},{rpm:1300,Te:-25,Tc:35,cap:57.85,pw:21.89},
+  {rpm:1300,Te:-15,Tc:45,cap:90.58,pw:30.24},{rpm:1300,Te:-20,Tc:45,cap:70.68,pw:26.85},{rpm:1300,Te:-25,Tc:45,cap:54.24,pw:23.36},
+  {rpm:1300,Te:-15,Tc:55,cap:84.99,pw:32.71},{rpm:1300,Te:-20,Tc:55,cap:65.58,pw:28.51},{rpm:1300,Te:-25,Tc:55,cap:49.09,pw:24.23}]};
+
+//===== MAP interp =====
+function mapInterp(rpm,Te,Tc){let rows=S.map.filter(r=>r.rpm===rpm);if(!rows.length)rows=S.map;if(!rows.length)return{cap:1,pw:1,cop:1,oor:true};
+ const Tes=[...new Set(rows.map(r=>r.Te))].sort((a,b)=>a-b),Tcs=[...new Set(rows.map(r=>r.Tc))].sort((a,b)=>a-b);
+ const cl=(x,a,b)=>Math.max(a,Math.min(b,x));const oor=Te<Tes[0]||Te>Tes.at(-1)||Tc<Tcs[0]||Tc>Tcs.at(-1);
+ Te=cl(Te,Tes[0],Tes.at(-1));Tc=cl(Tc,Tcs[0],Tcs.at(-1));
+ const lo=(a,x)=>{let i=0;for(;i<a.length-1;i++)if(x<=a[i+1])break;return i;};const i=lo(Tes,Te),j=lo(Tcs,Tc);
+ const Te0=Tes[i],Te1=Tes[i+1]??Tes[i],Tc0=Tcs[j],Tc1=Tcs[j+1]??Tcs[j];
+ const ft=Te1===Te0?0:(Te-Te0)/(Te1-Te0),fc=Tc1===Tc0?0:(Tc-Tc0)/(Tc1-Tc0);
+ const at=(te,tc,f)=>{const r=rows.find(x=>x.Te===te&&x.Tc===tc);return r?r[f]:(rows.find(x=>x.Te===te)||rows[0])[f];};
+ const bil=f=>{const a=at(Te0,Tc0,f)+fc*(at(Te0,Tc1,f)-at(Te0,Tc0,f)),b=at(Te1,Tc0,f)+fc*(at(Te1,Tc1,f)-at(Te1,Tc0,f));return a+ft*(b-a);};
+ const cap=bil('cap'),pw=bil('pw');
+ const cF=(typeof document!=='undefined'&&document.getElementById('capFac'))?(+document.getElementById('capFac').value||1):1;
+ const pF=(typeof document!=='undefined'&&document.getElementById('pwFac'))?(+document.getElementById('pwFac').value||1):1;
+ const capS=cap*cF,pwS=pw*pF;return{cap:capS,pw:pwS,cop:capS/Math.max(.1,pwS),oor,capRated:cap,pwRated:pw};}
+const curRpm=()=>{const rpms=[...new Set(S.map.map(r=>r.rpm))].sort((a,b)=>a-b);const sel=document.getElementById('rpmSel');const val=sel&&sel.value?+sel.value:rpms[0];return rpms.includes(val)?val:rpms[0];};
+// rear static condenser: mean air-temperature rise in the back channel (stack-driven open channel)
+function channelRise(Qcond,Tamb,gap,Wback,Hback){if(Qcond<=0)return 0;const Cd=0.6,cp=1005,g=9.81;
+ const Tk=Tamb+278.15,rho=352.98/Tk,beta=1/Tk,Agap=Math.max(1e-4,gap*Wback);
+ const K=rho*Cd*Agap*Math.sqrt(2*g*beta*Math.max(0.2,Hback))*cp*2;return Math.pow(Qcond/K,2/3);}
+
+//===== segments =====
+function seg(id,opts,key){const el=document.getElementById(id);if(!el)return;el.innerHTML='';
+ opts.forEach(([val,lab])=>{const b=document.createElement('button');b.textContent=lab;if(S[key]===val)b.classList.add('on');
+  b.onclick=()=>{S[key]=val;seg(id,opts,key);recompute();};el.appendChild(b);});}
+function initSegs(){seg('seg-mode',[['energy','Energy + EEI'],['design','Cooling design']],'mode');
+ seg('seg-arch',[['single','Serial / single-evap'],['dual','Parallel / dual-loop']],'arch');
+ seg('seg-inst',[['freestanding','Freestanding'],['undercounter','Under-counter'],['builtin','Built-in']],'inst');
+ seg('seg-defrost',[['static','Static'],['nofrost','No-frost']],'defrost');
+ seg('seg-comp',[['fixed','Fixed speed'],['inverter','Inverter']],'comp');
+ seg('seg-hmodel',[['computed','Computed (Rayleigh + radiation)'],['fixed','Fixed constants']],'hmodel');}
+
+const ambientsFor=cl=>({SN:[10,16,25,32],N:[16,25,32],ST:[16,25,32,38],T:[16,25,32,38,43]})[cl];
+document.getElementById('climate').addEventListener('change',e=>{document.getElementById('ambList').value=ambientsFor(e.target.value).join(', ');recompute();});
+
+//===== tables =====
+function renderTargets(){const tb=document.getElementById('compTargets');tb.innerHTML='';
+ S.comps.forEach((c,i)=>{const o=Object.entries(TYPES).map(([k,t])=>`<option value="${k}" ${k===c.type?'selected':''}>${t.l}</option>`).join('');
+  const tr=document.createElement('tr');tr.innerHTML=`<td><input type="text" value="${c.name}" data-i="${i}" data-f="name"></td><td><select data-i="${i}" data-f="type">${o}</select></td>
+   <td><input type="number" value="${c.Ttgt}" data-i="${i}" data-f="Ttgt"></td><td><input type="number" value="${c.app??10}" data-i="${i}" data-f="app" class="appr-input" data-ci="${i}"></td><td class="te-cell" data-ci="${i}" style="font-family:var(--mono);color:var(--cyan);padding-left:7px">${teOf(c)}</td><td><button class="delc" data-del="${i}">×</button></td>`;tb.appendChild(tr);});wireC(tb);updateTeCells();}
+function renderGeo(){const tb=document.getElementById('geoBody');if(tb){tb.innerHTML='';
+ S.comps.forEach((c,i)=>{const tr=document.createElement('tr');tr.innerHTML=`<td style="white-space:nowrap">${c.name}</td>
+  <td><input type="number" value="${c.pu.side}" data-i="${i}" data-f="pu.side"></td><td><input type="number" value="${c.pu.top}" data-i="${i}" data-f="pu.top"></td>
+  <td><input type="number" value="${c.pu.bot}" data-i="${i}" data-f="pu.bot"></td><td><input type="number" value="${c.pu.back}" data-i="${i}" data-f="pu.back"></td>
+  <td><input type="number" value="${c.pu.door}" data-i="${i}" data-f="pu.door"></td>`;tb.appendChild(tr);});wireC(tb);}
+ const td=document.getElementById('geoDims');if(td){td.innerHTML='';
+  S.comps.forEach((c,i)=>{const tr=document.createElement('tr');tr.innerHTML=`<td style="white-space:nowrap">${c.name}</td>
+   <td><input type="number" value="${c.W}" data-i="${i}" data-f="W"></td><td><input type="number" value="${c.D}" data-i="${i}" data-f="D"></td><td><input type="number" value="${c.H}" data-i="${i}" data-f="H"></td><td><input type="number" value="${c.net}" data-i="${i}" data-f="net" step="0.01"></td><td><input type="number" value="${c.liner??3}" data-i="${i}" data-f="liner" step="0.5"></td><td><input type="number" value="${c.doorLiner??3}" data-i="${i}" data-f="doorLiner" step="0.5"></td><td><input type="number" value="${c.gskL??0}" data-i="${i}" data-f="gskL" step="10"></td>`;td.appendChild(tr);});wireC(td);}
+ const dtb=document.getElementById('doorTbl');if(dtb){dtb.innerHTML='';
+  S.comps.forEach((c,i)=>{const tr=document.createElement('tr');const opt=t=>`<option value="${t}" ${(c.doorType||'metal')===t?'selected':''}>${t}</option>`;
+   tr.innerHTML=`<td style="white-space:nowrap">${c.name}</td><td><select data-i="${i}" data-f="doorType">${opt('metal')}${opt('glass')}</select></td><td><input type="number" value="${c.doorW??0}" data-i="${i}" data-f="doorW" step="5"></td><td><input type="number" value="${c.doorH??0}" data-i="${i}" data-f="doorH" step="5"></td>`;dtb.appendChild(tr);});wireC(dtb);}}
+function wireC(tb){tb.querySelectorAll('input,select').forEach(el=>el.onchange=e=>{const i=+e.target.dataset.i,f=e.target.dataset.f,val=e.target.value;
+  if(f==='type'){S.comps[i].type=val;S.comps[i].Ttgt=TYPES[val].Tc;renderTargets();}
+  else if(f==='name')S.comps[i].name=val;else if(f==='doorType')S.comps[i].doorType=val;else if(f&&f.startsWith('pu.'))S.comps[i].pu[f.split('.')[1]]=+val;else if(f)S.comps[i][f]=+val;renderGeo();recompute();});
+ tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=e=>{if(S.comps.length>1){S.comps.splice(+e.target.dataset.del,1);renderTargets();renderGeo();renderVips();recompute();}});}
+document.getElementById('addComp').onclick=()=>{const id=Math.max(0,...S.comps.map(c=>c.id))+1;S.comps.push({id,name:'Comp '+id,type:'freshfood',Ttgt:4,app:10,W:450,D:520,H:400,pu:{side:48,top:48,bot:48,back:42,door:44},net:0.92,liner:3,doorLiner:3.5,gskL:0,doorType:'metal',doorW:0,doorH:0,fan:{on:false,W:2,link:'rt'}});renderTargets();renderGeo();renderVips();recompute();};
+
+function renderVips(){const tb=document.getElementById('vipBody');if(!tb)return;tb.innerHTML='';
+ S.vips.forEach((p,i)=>{const co=S.comps.map((c,ci)=>`<option value="${ci}" ${ci===p.comp?'selected':''}>${c.name}</option>`).join('');const so=SURF.map(s=>`<option value="${s}" ${s===p.surf?'selected':''}>${s}</option>`).join('');
+  const tr=document.createElement('tr');tr.innerHTML=`<td><select data-i="${i}" data-f="comp">${co}</select></td><td><select data-i="${i}" data-f="surf">${so}</select></td>
+   <td><input type="number" value="${p.W}" data-i="${i}" data-f="W"></td><td><input type="number" value="${p.H}" data-i="${i}" data-f="H"></td><td><input type="number" value="${p.t}" data-i="${i}" data-f="t"></td>
+   <td><input type="number" value="${p.k}" data-i="${i}" data-f="k" step="0.001"></td><td><input type="number" value="${p.qty}" data-i="${i}" data-f="qty"></td><td><button class="delc" data-del="${i}">×</button></td>`;tb.appendChild(tr);});
+ tb.querySelectorAll('input,select').forEach(el=>el.onchange=e=>{const i=+e.target.dataset.i,f=e.target.dataset.f,val=e.target.value;S.vips[i][f]=(f==='comp')?+val:(f==='surf')?val:+val;recompute();});
+ tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=e=>{S.vips.splice(+e.target.dataset.del,1);renderVips();recompute();});}
+document.getElementById('addVip').onclick=()=>{S.vips.push({comp:0,surf:'back',W:400,H:400,t:10,k:0.007,qty:1});renderVips();recompute();};
+document.getElementById('deriveBtn').onclick=deriveInner;
+document.getElementById('asCondOn').onchange=e=>{S.asCond=e.target.checked;recompute();};
+
+function renderMap(){const tb=document.getElementById('mapTbl');let h=`<thead><tr><th>rpm</th><th>T<sub>e</sub> °C</th><th>T<sub>c</sub> °C</th><th>Cap W</th><th>Power W</th><th>COP</th><th></th></tr></thead><tbody>`;
+ S.map.forEach((r,i)=>{h+=`<tr><td><input type="number" value="${r.rpm}" data-i="${i}" data-f="rpm"></td><td><input type="number" value="${r.Te}" data-i="${i}" data-f="Te"></td>
+  <td><input type="number" value="${r.Tc}" data-i="${i}" data-f="Tc"></td><td><input type="number" value="${r.cap}" data-i="${i}" data-f="cap" step="0.01"></td>
+  <td><input type="number" value="${r.pw}" data-i="${i}" data-f="pw" step="0.01"></td><td style="font-family:var(--mono);color:var(--muted);padding-left:8px">${(r.cap/r.pw).toFixed(2)}</td><td><button class="delc" data-del="${i}">×</button></td></tr>`;});
+ tb.innerHTML=h+`</tbody>`;
+ tb.querySelectorAll('input').forEach(el=>el.onchange=e=>{const i=+e.target.dataset.i,f=e.target.dataset.f;S.map[i][f]=+e.target.value;renderMap();renderRpm();recompute();});
+ tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=e=>{if(S.map.length>1){S.map.splice(+e.target.dataset.del,1);renderMap();renderRpm();recompute();}});}
+function renderRpm(){const rpms=[...new Set(S.map.map(r=>r.rpm))].sort((a,b)=>a-b);const sel=document.getElementById('rpmSel');const cur=sel.value;
+ sel.innerHTML=rpms.map(r=>`<option value="${r}" ${(+cur===r)?'selected':''}>${r} rpm</option>`).join('');
+ document.getElementById('rpmField').style.display=(rpms.length>1||S.comp==='inverter')?'grid':'none';}
+document.getElementById('addMapRow').onclick=()=>{const last=S.map.at(-1)||{rpm:1300,Te:-25,Tc:45,cap:50,pw:23};S.map.push({...last});renderMap();renderRpm();recompute();};
+function esc(s){return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+function fridgeSVG(comps, extH){
+  const W=250,Hh=360, x0=74,x1=182, topPad=24,botPad=24, drawH=Hh-topPad-botPad, bodyW=x1-x0;
+  const sumH=comps.reduce((s,c)=>s+c.H,0)||1;
+  let g=`<svg viewBox="0 0 ${W} ${Hh}" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Arial">`;
+  g+=`<rect x="${x0}" y="${topPad}" width="${bodyW}" height="${drawH}" rx="7" fill="#f4f8fa" stroke="#4a6572" stroke-width="1.5"/>`;
+  const cols=['#e8f2fb','#eaf6f1','#f3eee6','#f6eef3'];
+  let y=topPad+3; const seg=(drawH-6)/sumH; const rd=[];
+  comps.forEach((c,i)=>{ const hpx=c.H*seg;
+    g+=`<rect x="${x0+3}" y="${y.toFixed(1)}" width="${bodyW-6}" height="${hpx.toFixed(1)}" fill="${cols[i%4]}" stroke="#c4d3d9" stroke-width="0.6"/>`;
+    g+=`<rect x="${x1-9}" y="${(y+hpx*0.2).toFixed(1)}" width="2.4" height="${(hpx*0.6).toFixed(1)}" rx="1.2" fill="#8aa0ab"/>`;
+    g+=`<text x="${(x0+bodyW/2).toFixed(1)}" y="${(y+hpx/2+3).toFixed(1)}" text-anchor="middle" font-size="9" fill="#33505c">${esc(c.name)}</text>`;
+    rd.push([y,y+hpx,c.H]); y+=hpx;
+    if(i<comps.length-1) g+=`<line x1="${x0+3}" y1="${y.toFixed(1)}" x2="${x1-3}" y2="${y.toFixed(1)}" stroke="#4a6572" stroke-width="1.4"/>`;
+  });
+  g+=`<rect x="${x1-26}" y="${(topPad+drawH-14)}" width="26" height="14" fill="#f6e4d3" stroke="#b06a2e" stroke-width="0.6"/>`;
+  const lxd=x0-16;
+  g+=`<line x1="${lxd}" y1="${topPad}" x2="${lxd}" y2="${topPad+drawH}" stroke="#0a6b7d" stroke-width="1"/><line x1="${lxd-3}" y1="${topPad}" x2="${lxd+3}" y2="${topPad}" stroke="#0a6b7d" stroke-width="1"/><line x1="${lxd-3}" y1="${topPad+drawH}" x2="${lxd+3}" y2="${topPad+drawH}" stroke="#0a6b7d" stroke-width="1"/>`;
+  g+=`<text x="${lxd-6}" y="${topPad+drawH/2}" text-anchor="middle" font-size="10" fill="#0a6b7d" transform="rotate(-90 ${lxd-6} ${topPad+drawH/2})">overall ${extH} mm</text>`;
+  const rxd=x1+16;
+  rd.forEach(([ya,yb,mm])=>{ g+=`<line x1="${rxd}" y1="${ya.toFixed(1)}" x2="${rxd}" y2="${yb.toFixed(1)}" stroke="#5c6f7a" stroke-width="0.9"/><line x1="${rxd-3}" y1="${ya.toFixed(1)}" x2="${rxd+3}" y2="${ya.toFixed(1)}" stroke="#5c6f7a" stroke-width="0.9"/><line x1="${rxd-3}" y1="${yb.toFixed(1)}" x2="${rxd+3}" y2="${yb.toFixed(1)}" stroke="#5c6f7a" stroke-width="0.9"/>`;
+    const my=(ya+yb)/2; g+=`<text x="${rxd+6}" y="${my}" text-anchor="middle" font-size="9.5" fill="#5c6f7a" transform="rotate(-90 ${rxd+6} ${my})">${mm} mm</text>`; });
+  g+=`</svg>`; return g;
+}
+
+function donutSVG(slices){
+  slices=slices.filter(s=>s.value>0); const tot=slices.reduce((s,x)=>s+x.value,0)||1;
+  const cx=80,cy=80,r=74,hole=40; let a0=-Math.PI/2; let paths='';
+  slices.forEach(s=>{ const frac=s.value/tot,a1=a0+frac*2*Math.PI;
+    if(frac>0.9999){paths+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${s.color}"/>`;}
+    else{const x0=cx+r*Math.cos(a0),y0=cy+r*Math.sin(a0),x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1),lg=(a1-a0)>Math.PI?1:0;
+      paths+=`<path d="M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${r},${r} 0 ${lg} 1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" fill="${s.color}" stroke="#fff" stroke-width="1.5"/>`;}
+    a0=a1;});
+  return `<svg viewBox="0 0 160 160" width="150" xmlns="http://www.w3.org/2000/svg"><circle cx="${cx}" cy="${cy}" r="${r+1}" fill="#fff"/>${paths}<circle cx="${cx}" cy="${cy}" r="${hole}" fill="#fff"/></svg>`;
+}
+function legendHTML(slices){ slices=slices.filter(s=>s.value>0); const tot=slices.reduce((s,x)=>s+x.value,0)||1;
+  return `<div class="leg">`+slices.map(s=>`<div class="li"><span class="dot" style="background:${s.color}"></span>${esc(s.label)} <b>${(s.value/tot*100).toFixed(0)}%</b></div>`).join('')+`</div>`; }
+
+const CLSCOL={A:'1f8a4c',B:'5fa52a',C:'a8b11e',D:'e0a800',E:'e07b1a',F:'d9603f',G:'b23a2e'};
+
+function reportHTML(D){
+  const clsCol=CLSCOL[D.cls]||'0a6b7d';
+  const bands=[['A','≤41'],['B','42–51'],['C','52–64'],['D','65–80'],['E','81–100'],['F','101–125'],['G','>125']];
+  const cat={Doors:0,'Side walls':0,Back:0,'Top / bottom':0,'Machine room':0,Edges:0,Gaskets:0,'Anti-sweat loop':0,Mullion:D.ref.mull||0};
+  D.ref.detail.forEach(d=>{ d.walls.forEach(w=>{ if(w.s==='door')cat.Doors+=w.q; else if(w.s==='left'||w.s==='right')cat['Side walls']+=w.q; else if(w.s==='back')cat.Back+=w.q; else if(w.s==='top'||w.s==='bottom')cat['Top / bottom']+=w.q; else if(w.s==='mach-room')cat['Machine room']+=w.q; else if(w.s==='anti-sweat loop')cat['Anti-sweat loop']+=w.q; }); cat.Edges+=d.edge; cat.Gaskets+=d.gasket; });
+  const pieCols={Doors:'0e8aa0','Side walls':'3aa6b4',Back:'6bbcc8','Top / bottom':'9ed3db','Machine room':'d9603f',Edges:'e0a23f',Gaskets:'8a9aa3','Anti-sweat loop':'c0507a',Mullion:'8f7bb0'};
+  const heatSlices=Object.keys(cat).map(k=>({label:k,value:Math.max(0,cat[k]),color:'#'+pieCols[k]}));
+  const eCols=['0e8aa0','3aa6b4','6bbcc8','9ed3db','e0a23f','d9603f','c98a5e','8f7bb0'];
+  const enSlices=D.ecomp.map((e,i)=>({label:e[0],value:e[1],color:'#'+eCols[i%eCols.length]}));
+  const frzNet=D.vols.filter((x,i)=>D.frozen[i]).reduce((s,x)=>s+x.net,0);
+  const ffNet=D.vols.filter((x,i)=>!D.frozen[i]).reduce((s,x)=>s+x.net,0);
+  const totNet=frzNet+ffNet;
+  const tes=[...new Set(D.map.map(m=>m.Te))],tcs=[...new Set(D.map.map(m=>m.Tc))];
+  const single=tes.length<2||tcs.length<2; const anyOor=D.ref.loops.some(l=>l.oor);
+  const mapNote= single ? `Single calorimeter point (Te ${tes[0]} °C, Tc ${tcs[0]} °C) — every operating point is clamped to it; no interpolation.`
+    : `Bilinear interpolation over Te {${Math.min(...tes)}…${Math.max(...tes)}} °C × Tc {${Math.min(...tcs)}…${Math.max(...tcs)}} °C. ${anyOor?'Some points fall outside the map and are clamped (*).':'All operating points fall inside the map.'}`;
+  const evapLabel={rollbond:'Roll-bond / plate (static)',wiretube:'Wire-on-tube (static)',fintube:'Fin-tube (forced)'}[D.evapType]||D.evapType;
+  const condLabel={forced:'Forced coil + fan (machine room)',staticwire:'Static wire-tube (rear)',skin:'Skin / panel (bonded)'}[D.condType]||D.condType;
+  const kpi=(v,l)=>`<div class="kp"><b>${v}</b><span>${l}</span></div>`;
+
+  let H=`<style>
+  .rpt{font-family:'Segoe UI',-apple-system,Roboto,Helvetica,Arial,sans-serif;color:#25343d;font-size:11px;line-height:1.4;font-weight:400}
+  .rpt *{box-sizing:border-box}
+  .rpt .hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #0a6b7d;padding-bottom:8px;margin-bottom:11px}
+  .rpt h1{font-size:21px;margin:0;color:#16303f;font-weight:600;letter-spacing:-.2px}
+  .rpt .sub{color:#5c6f7a;font-size:11px}
+  .rpt h2{font-size:11.5px;color:#0a6b7d;font-weight:600;margin:12px 0 4px}
+  .rpt table{width:100%;border-collapse:collapse;margin:2px 0 4px}
+  .rpt th,.rpt td{border:1px solid #dde6ea;padding:3.5px 8px;text-align:left;font-size:10.5px;line-height:1.3}
+  .rpt th{background:#f0f5f7;color:#4a626d;font-weight:600}
+  .rpt td{color:#25343d}
+  .rpt .krow{display:flex;gap:9px;margin-bottom:8px}
+  .rpt .kp{flex:1;border:1px solid #dbe6ea;border-radius:8px;padding:8px 12px;background:#fbfdfe}
+  .rpt .kp b{display:block;font-size:17px;color:#0a6b7d;font-weight:600;line-height:1.15}
+  .rpt .kp span{font-size:9.5px;color:#5c6f7a}
+  .rpt .brow{display:flex;gap:9px;align-items:stretch}
+  .rpt .eeicard{flex:0 0 37%;border:1px solid #dbe6ea;border-radius:8px;padding:9px 12px;background:#fbfdfe}
+  .rpt .clsrow{display:flex;align-items:center;gap:11px}
+  .rpt .badge{width:46px;height:46px;border-radius:9px;background:#${clsCol};color:#fff;font-size:26px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .rpt .eei{font-size:11px;color:#5c6f7a}.rpt .eei b{font-size:18px;color:#16303f;font-weight:600}
+  .rpt .hlad{display:flex;gap:2px;margin-top:8px}
+  .rpt .hseg{flex:1;text-align:center;font-size:9px;font-weight:700;color:#fff;line-height:15px;border-radius:2px}
+  .rpt .vbox{flex:1;text-align:center;border:1px solid #dbe6ea;border-radius:8px;padding:8px 3px;background:#fbfdfe;display:flex;flex-direction:column;justify-content:center}
+  .rpt .vbox b{display:block;font-size:17px;color:#16303f;font-weight:600}.rpt .vbox span{font-size:9px;color:#5c6f7a}
+  .rpt .tgt{text-align:center;font-size:10px;color:#5c6f7a;margin-top:7px}
+  .rpt .main{display:flex;gap:14px;align-items:flex-start;margin-top:12px}
+  .rpt .left{flex:1;min-width:0}
+  .rpt .right{flex:0 0 256px}
+  .rpt .note{font-size:9.5px;color:#5c6f7a;margin:2px 0 4px}
+  .rpt .viz{border:1px solid #cbd9df;border-radius:9px;padding:10px 11px;margin-bottom:11px}
+  .rpt .vzt{font-size:11px;font-weight:600;color:#0a6b7d;margin-bottom:5px}
+  .rpt .leg{display:flex;flex-wrap:wrap;margin-top:8px}
+  .rpt .li{flex:0 0 50%;font-size:9.5px;padding:1.5px 0;color:#33505c}
+  .rpt .li b{color:#16303f}
+  .rpt .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+  .rpt .foot{margin-top:12px;font-size:9.5px;color:#5c6f7a;border-top:1px solid #cbd9df;padding-top:6px}
+  </style><div class="rpt">
+  <div class="hd"><div><h1>${esc(D.model)}</h1><div class="sub">Refrigerator thermal &amp; energy design report</div></div>
+   <div style="text-align:right;font-size:10.5px;color:#5c6f7a">Generated ${D.dstr}<br>Climate ${D.climate} · design ambient ${D.dAmb} °C · ${D.arch}</div></div>`;
+  // ---- top KPI band (full width) ----
+  H+=`<div class="krow">${kpi(D.ref.Qtot.toFixed(1)+' W','Total heat load')}${kpi((D.ref.maxRT*100).toFixed(0)+' %','Max loop run-time')}${kpi(D.ref.total.toFixed(0)+' Wh','Daily energy @ '+D.ref.Tamb+'°C')}${kpi((D.foamTotal!=null?D.foamTotal:D.foamMass).toFixed(2)+' kg','PU foam (total)')}</div>`;
+  H+=`<div class="brow">`;
+  if(D.energy){H+=`<div class="eeicard"><div class="clsrow"><div class="badge">${D.cls}</div><div><div class="eei">EEI <b>${D.EEI.toFixed(1)}</b> % · class ${D.cls}</div><div class="eei" style="font-size:9.5px">AE ${D.AE.toFixed(0)} · SAE ${D.SAE.toFixed(0)} kWh/a</div></div></div><div class="hlad">`;
+    bands.forEach(([l])=>{const act=l===D.cls;H+=`<div class="hseg" style="background:#${CLSCOL[l]};opacity:${act?1:0.4};box-shadow:${act?'0 0 0 1.5px #16303f':'none'}">${l}</div>`;});
+    H+=`</div></div>`;}
+  H+=`<div class="vbox"><b>${frzNet.toFixed(0)} L</b><span>Freezer net</span></div><div class="vbox"><b>${ffNet.toFixed(0)} L</b><span>Fresh-food net</span></div><div class="vbox"><b>${totNet.toFixed(0)} L</b><span>Total net</span></div></div>`;
+  if(D.targetVol>0){const d=totNet-D.targetVol;H+=`<div class="tgt">Net volume vs target ${D.targetVol} L: <b style="color:#${Math.abs(d)/D.targetVol<=0.03?'2e8b6f':'d9603f'}">${d>=0?'+':''}${d.toFixed(0)} L (${(d/D.targetVol*100).toFixed(0)}%)</b>${D.targetFrz>0?` · freezer target ${D.targetFrz} L`:''}</div>`;}
+  // ---- main two-column ----
+  H+=`<div class="main"><div class="left">`;
+  // 1 compartments (trimmed)
+  H+=`<h2>Compartments</h2><table><tr><th>Name</th><th>Type</th><th>Target °C</th><th>W × D × H mm</th></tr>`;
+  D.comps.forEach(c=>{H+=`<tr><td>${esc(c.name)}</td><td>${c.typeL}</td><td>${c.Ttgt}</td><td>${c.W} × ${c.D} × ${c.H}</td></tr>`;});
+  H+=`</table>`;
+  // 2 cabinet & cooling (trimmed)
+  H+=`<h2>Cabinet &amp; cooling</h2><table>
+   <tr><th>Evaporator</th><td>${evapLabel}</td></tr>
+   <tr><th>Condenser</th><td>${condLabel} · approach ${D.cdApp} K</td></tr>
+   <tr><th>Doors</th><td>${D.doors?D.doors.map(d=>`${esc(d.name)}: ${d.type}${d.type==='glass'?` (U ${D.glassU})`:''}${d.W>0?` ${d.W}×${d.H} mm`:''}`).join(' · '):'—'}</td></tr>
+   <tr><th>Cooling mode / film</th><td>${D.defrost} · ${D.hmodel}</td></tr>
+   <tr><th>PU foam (total)</th><td>${(D.foamTotal!=null?D.foamTotal:D.foamMass).toFixed(2)} kg</td></tr></table>`;
+  if(D.doorFoam){H+=`<div class="note">PU quantity: cabinet walls <b>${D.foamMass.toFixed(2)} kg</b> (density ${D.puRho||''} kg/m³)`+D.doorFoam.map(d=>` · ${esc(d.name)} door ${d.glass?'<b>glass — no PU</b>':`<b>${d.mass.toFixed(2)} kg</b>`}`).join('')+`${D.doorRho?` · door foam ${D.doorRho} kg/m³`:''}</div>`;}
+  // 3 wall construction (PU then VIP)
+  H+=`<h2>Wall construction — PU per wall (mm)</h2><table><tr><th>Comp</th><th>side</th><th>top</th><th>bot</th><th>back</th><th>door</th><th>liner</th><th>dr lnr</th></tr>`;
+  D.comps.forEach(c=>{H+=`<tr><td>${esc(c.name)}</td><td>${c.pu.side}</td><td>${c.pu.top}</td><td>${c.pu.bot}</td><td>${c.pu.back}</td><td>${c.pu.door}</td><td>${c.liner}</td><td>${c.doorLiner}</td></tr>`;});
+  H+=`</table>`;
+  if(D.vips.length){H+=`<table style="margin-top:4px"><tr><th>VIP — Comp</th><th>Surface</th><th>W×H mm</th><th>t mm</th><th>k</th><th>Qty</th></tr>`;
+    D.vips.forEach(p=>{H+=`<tr><td>${esc(p.comp)}</td><td>${p.surf}</td><td>${p.W}×${p.H}</td><td>${p.t}</td><td>${p.k}</td><td>${p.qty}</td></tr>`;});H+=`</table>`;}
+  // 4 compressor
+  H+=`<h2>Compressor</h2><table>
+   <tr><th>Name / model</th><td>${esc(D.comp)}</td></tr>
+   <tr><th>Type</th><td>${D.compType} @ ${D.rpm} rpm</td></tr>
+   <tr><th>System cap / power factor</th><td>${D.capF.toFixed(2)} × / ${D.pwF.toFixed(2)} ×</td></tr></table>
+   <div class="note">Map evaluation: ${mapNote}</div>`;
+  // 5 operating points
+  H+=`<h2>Operating points @ ${D.ref.Tamb} °C</h2><table><tr><th>Loop</th><th>Te</th><th>Tc</th><th>Cap W</th><th>Pw W</th><th>COP</th><th>RT%</th></tr>`;
+  D.ref.loops.forEach(l=>{H+=`<tr><td>${esc(l.name)}${l.oor?' *':''}</td><td>${l.Te}</td><td>${l.Tc.toFixed(0)}</td><td>${l.cap.toFixed(0)}</td><td>${l.pw.toFixed(0)}</td><td>${l.cop.toFixed(2)}</td><td>${(l.beta*100).toFixed(0)}</td></tr>`;});
+  H+=`</table>`;
+  // 6 performance
+  H+=`<h2>Performance across ambients</h2><table><tr><th>Amb °C</th><th>Load W</th><th>Cap W</th><th>COP</th><th>RT %</th><th>Energy Wh</th></tr>`;
+  D.perf.forEach(p=>{const l0=p.loops[0];H+=`<tr><td>${p.Tamb}</td><td>${p.loops.reduce((s,l)=>s+l.Q,0).toFixed(0)}</td><td>${l0.cap.toFixed(0)}</td><td>${l0.cop.toFixed(2)}</td><td>${(p.maxRT*100).toFixed(0)}</td><td>${p.total.toFixed(0)}</td></tr>`;});
+  H+=`</table>`;
+  // 7 eu rating
+  if(D.energy){H+=`<h2>EU rating basis (16 / 32 °C)</h2><table>
+   <tr><th>E₁₆</th><td>${(D.E16*1000).toFixed(0)} Wh</td><th>E₃₂</th><td>${(D.E32*1000).toFixed(0)} Wh</td></tr>
+   <tr><th>Rating daily</th><td>${(D.Edaily*1000).toFixed(0)} Wh</td><th>Annual AE</th><td>${D.AE.toFixed(0)} kWh/a</td></tr>
+   <tr><th>Standard SAE</th><td>${D.SAE.toFixed(0)} kWh/a</td><th>EEI → ${D.cls}</th><td><b>${D.EEI.toFixed(1)} %</b></td></tr></table>`;}
+  H+=`</div><div class="right">`;
+  // right visuals
+  H+=`<div class="viz"><div class="vzt">Cabinet — front elevation</div><div style="max-width:156px;margin:0 auto">${fridgeSVG(D.comps.map(c=>({name:c.name,H:c.H})),D.extH)}</div></div>`;
+  H+=`<div class="viz"><div class="vzt">Heat gain @ ${D.ref.Tamb}°C · ${D.ref.Qtot.toFixed(0)} W</div><div style="text-align:center">${donutSVG(heatSlices)}</div>${legendHTML(heatSlices)}</div>`;
+  H+=`<div class="viz"><div class="vzt">Daily energy @ ${D.ref.Tamb}°C · ${D.ref.total.toFixed(0)} Wh</div><div style="text-align:center">${donutSVG(enSlices)}</div>${legendHTML(enSlices)}</div>`;
+  H+=`</div></div>`;
+  H+=`<div class="foot">Map-based pseudo-steady estimate per EU 2019/2016 (Annex IV). ${single?'Single-point map — clamped.':'Interpolated map.'} Te held across ambients. Steady-state — not a substitute for EN IEC 62552 measurement. Generated by RefDesign.</div></div>`;
+  return H;
+}
+
+function generateReport(){
+ const r=compute(),dAmb=parseFloat(txt('designAmb'))||32;
+ const ref=r.perf.reduce((a,b)=>Math.abs(b.Tamb-dAmb)<Math.abs(a.Tamb-dAmb)?b:a,r.perf[0]);
+ const capF=+(document.getElementById('capFac')||{value:1}).value||1, pwF=+(document.getElementById('pwFac')||{value:1}).value||1;
+ const D={model:txt('modelName')||'Refrigerator design', comp:txt('compName')||'\u2014',
+  dstr:new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}),
+  climate:txt('climate'), dAmb, arch:S.arch==='single'?'single-evaporator':'dual-loop',
+  energy:S.mode==='energy', cls:r.cls, EEI:r.EEI, AE:r.AE, SAE:r.SAE, E16:r.E16, E32:r.E32, Edaily:r.Edaily, Lf:r.Lf,
+  extW:v('extW'),extD:v('extD'),extH:v('extH'), mrW:v('mrW'),mrD:v('mrD'),mrH:v('mrH'),mrT:v('mrT'),
+  cdApp:v('cdApp'), defrost:S.defrost, hmodel:S.hmodel, foamMass:r.foamMass, doorFoam:r.doorFoam, foamTotal:r.foamTotal,
+  puRho:v('puRho'), doorRho:v('doorRho'), glassU:v('glassU'), doors:S.comps.map(c=>({name:c.name,type:c.doorType||'metal',W:c.doorW||0,H:c.doorH||0})),
+  evapType:txt('evapType'), condType:txt('condType'), compType:S.comp==='fixed'?'Fixed-speed':'Inverter', rpm:r.rpm, capF, pwF,
+  targetVol:v('targetVol'), targetFrz:v('targetFrz'),
+  comps:S.comps.map(c=>({name:c.name,typeL:(TYPES[c.type]||{l:c.type}).l,Ttgt:c.Ttgt,app:c.app,Te:teOf(c).toFixed(0),W:c.W,D:c.D,H:c.H,pu:c.pu,liner:c.liner??v('linerT'),doorLiner:c.doorLiner??v('linerT')})),
+  frozen:S.comps.map(c=>TYPES[c.type].grp==='frozen'),
+  vols:r.vols,
+  vips:S.vips.map(p=>({comp:(S.comps[p.comp]||{name:'?'}).name,surf:p.surf,W:p.W,H:p.H,t:p.t,k:p.k,qty:p.qty||1})),
+  map:S.map, ref, perf:r.perf,
+  ecomp:[['Compressor',ref.compEC],['Fans',ref.fanEC],['Circulation fans',ref.circEC||0],['Board',ref.boardEC],['Light',ref.lightEC],['Anti-sweat',ref.asEC],['Evap-cover',ref.ecEC],['Defrost',ref.dfEC]]};
+ document.getElementById('reportView').innerHTML=reportHTML(D);
+ window.print();
+}
+document.getElementById('reportBtn').onclick=generateReport;
+document.getElementById('rpmSel').onchange=recompute;
+function renderDesignAmb(){const ambs=txt('ambList').split(',').map(x=>parseFloat(x)).filter(x=>!isNaN(x));if(!ambs.length)return;
+ const sel=document.getElementById('designAmb');const cur=+sel.value;const ceiling=({SN:32,N:32,ST:38,T:43})[txt('climate')];
+ sel.innerHTML=ambs.map(a=>`<option value="${a}">${a} °C</option>`).join('');
+ sel.value=ambs.includes(cur)?cur:(ambs.includes(ceiling)?ceiling:Math.max(...ambs));}
+document.getElementById('designAmb').onchange=renderAll;
+document.getElementById('xwallSel').onchange=e=>{const[ci,s]=e.target.value.split('|');S.xwall={ci:+ci,s};renderXsec();};
+document.getElementById('coilImportBtn').onclick=()=>{const msg=document.getElementById('coilImportMsg');
+ let d;try{d=JSON.parse(document.getElementById('coilImport').value);}catch(err){msg.style.color='var(--warn)';msg.textContent='not valid JSON';return;}
+ if(!d||!d.evaporator||!d.condenser){msg.style.color='var(--warn)';msg.textContent='missing evaporator/condenser';return;}
+ // condenser approach
+ if(isFinite(d.condenser.approach))document.getElementById('cdApp').value=d.condenser.approach;
+ // evaporator approach -> coldest compartment
+ let coldIdx=0;S.comps.forEach((c,i)=>{if(c.Ttgt<S.comps[coldIdx].Ttgt)coldIdx=i;});
+ if(isFinite(d.evaporator.approach))S.comps[coldIdx].app=d.evaporator.approach;
+ renderTargets();renderGeo();recompute();
+ msg.style.color='var(--ok)';msg.textContent=`applied — ${S.comps[coldIdx].name} Te ${teOf(S.comps[coldIdx])}°, Tc approach ${d.condenser.approach}K`;};
+document.querySelectorAll('#skinSurf input').forEach(cb=>cb.onchange=e=>{S.skin[e.target.dataset.s]=e.target.checked;recompute();});
+document.getElementById('skinCov').onchange=e=>{S.skin.cov=e.target.value;recompute();};
+
+//===== compute (validated engine) =====
+function compute(){const auto=S.defrost==='nofrost',builtin=S.inst!=='freestanding',Bc=builtin?1.02:1.0,mm=x=>x/1000;
+ const kpu=v('puK'),kl=v('linerK'),tl=v('linerT')/1000,ks=v('shellK'),ts=v('shellT')/1000,hout=v('hout');
+ const hinOf=c=>TYPES[c.type].grp==='frozen'?v('hinFRZ'):v('hinFF');
+ const hmodel=S.hmodel||'computed',forcedAll=S.defrost==='nofrost';
+ const AIR={nu:1.5e-5,al:2.1e-5,k:0.026,Pr:0.71,g:9.81},SIG=5.67e-8,EPS=0.9;
+ const hConv=(dT,L,TfK)=>{const Ra=AIR.g*(1/TfK)*Math.abs(dT)*Math.pow(L,3)/(AIR.nu*AIR.al);const Nu=Math.pow(0.825+0.387*Math.pow(Ra,1/6)/Math.pow(1+Math.pow(0.492/AIR.Pr,9/16),8/27),2);return Math.max(0.5,Nu*AIR.k/L);};
+ const hRad=(TsK,TrK)=>EPS*SIG*(TsK*TsK+TrK*TrK)*(TsK+TrK);
+ const Rsolid=(t,vt,vk,lin)=>{const pu=Math.max(0,t-(vt||0))/1000;return ((lin??v('linerT'))/1000)/kl+ts/ks+pu/kpu+((vt||0)/1000)/(vk||1);};
+ function wallFilms(Tout,Tin,Rs,L,hinFix,forced){let hi=forced||hinFix,ho=hout;
+   if(hmodel==='fixed')return{hi:(forced||hinFix),ho:hout};
+   for(let k=0;k<5;k++){const U=1/(1/hi+Rs+1/ho),Q=U*(Tout-Tin),Tso=Tout-Q/ho,Tsi=Tin+Q/hi;
+     ho=hConv(Tout-Tso,L,(Tout+Tso)/2+273)+hRad(Tso+273,Tout+273);
+     hi=forced?forced:hConv(Tsi-Tin,L,(Tin+Tsi)/2+273)+hRad(Tsi+273,Tin+273);}
+   return{hi,ho};}
+ function wallU(Tout,Tin,t,L,hinFix,forced,vt,vk,lin){const Rs=Rsolid(t,vt,vk,lin);const f=wallFilms(Tout,Tin,Rs,L,hinFix,forced);return 1/(1/f.hi+Rs+1/f.ho);}
+ const mullionU=(t,lA,lB,hiA,hiB)=>{const Rs=((lA??v('linerT'))/1000)/kl+(t/1000)/kpu+((lB??v('linerT'))/1000)/kl;return 1/(1/hiA+Rs+1/hiB);};
+ const twall=(t,lin)=>(t+(lin??v('linerT'))+v('shellT'))/1000,meanA=(a,b,t)=>{const Ai=a*b,Ao=(a+2*t)*(b+2*t);return(Ai+Ao)/2;};
+ const Vext=mm(v('extW'))*mm(v('extD'))*mm(v('extH')),Vmr=mm(v('mrW'))*mm(v('mrD'))*mm(v('mrH'));
+ let Vint=0,Vnet=0;S.comps.forEach((c,i)=>{let vol=mm(c.W)*mm(c.D)*mm(c.H);
+  if(i===S.comps.length-1)vol=Math.max(0.001,vol-mm(v('mrW'))*mm(v('mrD'))*mm(v('mrH'))); // machine-room recess carved from bottom compartment
+  c._gross=vol*1000;c._net=vol*1000*(c.net||.9);Vint+=vol;Vnet+=vol*(c.net||.9);});
+ const Vfoam=Math.max(0,Vext-Vint-Vmr),foamMass=Vfoam*v('puRho'),Vtot=Vnet*1000;
+ const puRho=v('puRho');
+ const doorRho=v('doorRho')||puRho;
+ const doorFoam=S.comps.map(c=>{if((c.doorType||'metal')==='glass')return{name:c.name,mass:0,vol:0,glass:true,type:'glass'};
+   const twd=(c.pu.side+(c.liner??v('linerT'))+v('shellT'))/1000;const dW=c.doorW>0?mm(c.doorW):mm(c.W)+2*twd,dH=c.doorH>0?mm(c.doorH):mm(c.H)+2*twd;const A=dW*dH,vol=A*mm(c.pu.door);return{name:c.name,mass:vol*doorRho,vol:vol*1000,glass:false,type:'metal'};});
+ const doorFoamTotal=doorFoam.reduce((s,d)=>s+d.mass,0),foamTotal=foamMass+doorFoamTotal;
+ const condType=txt('condType'),mrT=v('mrT'),panelT=v('panelTemp');
+ const chGap=v('chanGap')/1000||0.032,Wback=mm(v('extW')),Hback=S.comps.reduce((s2,c)=>s2+mm(c.H),0);
+ const mrW=v('mrW'),mrD=v('mrD'),mrH=v('mrH');
+ const sc=(condType!=='skin')?[]:(S.skin.cov==='all'?S.comps.map((_,i)=>i):S.skin.cov==='fz'?S.comps.map((c,i)=>TYPES[c.type].grp==='frozen'?i:-1).filter(i=>i>=0):S.comps.map((c,i)=>TYPES[c.type].grp!=='frozen'?i:-1).filter(i=>i>=0));
+ const bottomIdx=S.comps.length-1,edgeFrac=v('edgeFrac');
+ const vipArea=(ci,s)=>S.vips.filter(p=>p.comp===ci&&p.surf===s).reduce((x,p)=>x+mm(p.W)*mm(p.H)*p.qty,0);
+ const vipPanel=(ci,s)=>S.vips.find(p=>p.comp===ci&&p.surf===s);
+ function loadAt(Tamb,backRise){backRise=backRise||0;let total=0;const detail=[];
+  const per=S.comps.map((c,i)=>{const W=mm(c.W),D=mm(c.D),H=mm(c.H),hin=hinOf(c),lb=c.liner??v('linerT'),ld=c.doorLiner??v('linerT');
+   const faces=[['left',D,H,c.pu.side,lb],['right',D,H,c.pu.side,lb],['door',W,H,c.pu.door,ld],['back',W,H,c.pu.back,lb],['top',W,D,c.pu.top,lb],['bottom',W,D,c.pu.bot,lb]];
+   const walls=[];let q1d=0;const forced=(forcedAll||(c.fan&&c.fan.on))?hin:null;
+   faces.forEach(([s,a,b,t,lin])=>{
+    if(s==='bottom'&&i<S.comps.length-1)return;   // internal interface -> handled by mullion
+    if(s==='top'&&i>0)return;
+    let Tout=Tamb;                                 // machine room NO LONGER applied to back/bottom here
+    if(s==='back'&&condType==='staticwire')Tout=Tamb+backRise;   // rear coil warms the channel air across the whole back
+    if(condType==='skin'&&sc.includes(i)&&S.skin[s])Tout=Math.max(Tout,panelT);
+    if(s==='door'){if(c.doorW>0)a=mm(c.doorW);if(c.doorH>0)b=mm(c.doorH);
+     if((c.doorType||'metal')==='glass'){const dTg=Tout-c.Ttgt,qg2=v('glassU')*(a*b)*dTg;q1d+=qg2;walls.push({s,q:qg2});return;}}
+    let A=meanA(a,b,twall(t,lin));
+    if(s==='bottom'&&i===bottomIdx)A=Math.max(0.01,A-mm(mrW)*mm(mrD)); // bottom ambient area minus recess footprint
+    const dT=Tout-c.Ttgt,va=Math.min(A,vipArea(i,s)),vp=vipPanel(i,s),L=Math.max(0.2,b);
+    let qf;if(va>0&&vp)qf=dT*(wallU(Tout,c.Ttgt,t,L,hin,forced,0,0,lin)*(A-va)+wallU(Tout,c.Ttgt,t,L,hin,forced,vp.t,vp.k,lin)*va);
+    else qf=wallU(Tout,c.Ttgt,t,L,hin,forced,0,0,lin)*A*dT;q1d+=qf;walls.push({s,q:qf});});
+   if(i===bottomIdx){const recA=mm(mrW)*mm(mrD)+mm(mrW)*mm(mrH); // recess ceiling + vertical face, both face the machine room
+    const qMC=wallU(mrT,c.Ttgt,c.pu.bot,Math.max(0.2,mm(mrH)),hin,forced,0,0,lb)*recA*(mrT-c.Ttgt);q1d+=qMC;walls.push({s:'mach-room',q:qMC});}
+   const edge=q1d*edgeFrac,gU=TYPES[c.type].grp==='frozen'?v('gaskFRZ'):v('gaskFF');
+   const twd=(c.pu.side+(c.liner??v('linerT'))+v('shellT'))/1000; // door-side wall build-up (m)
+   const perim=(c.gskL&&c.gskL>0)?c.gskL/1000:2*((W+2*twd)+(H+2*twd)); // gasket runs on the door flange, not the liner edge; measured override if gskL>0
+   const qg=gU*perim*(Tamb-c.Ttgt);
+   let qloop=0; // anti-sweat condenser loop around the door aperture: condenser-outlet heat leaking back to interior (parasitic load, no kWh)
+   if(S.asCond){const Tloop=Tamb+v('cdApp');qloop=Math.max(0,v('asCondU')*perim*(Tloop-c.Ttgt));if(qloop>0)walls.push({s:'anti-sweat loop',q:qloop});}
+   detail.push({name:c.name,walls,edge,gasket:qg,loop:qloop});return{name:c.name,q:q1d+edge+qg+qloop,Te:teOf(c)};});
+  let mull=0;for(let i=0;i<S.comps.length-1;i++){const a=S.comps[i],b=S.comps[i+1];
+   const lA=a.liner??v('linerT'),lB=b.liner??v('linerT'),puM=(a.pu.bot+b.pu.top)/2;
+   const Am=meanA(mm(Math.min(a.W,b.W)),mm(Math.min(a.D,b.D)),twall(puM,(lA+lB)/2));
+   const qp=mullionU(puM,lA,lB,hinOf(a),hinOf(b))*Am*Math.abs(a.Ttgt-b.Ttgt);per[a.Ttgt<b.Ttgt?i:i+1].q+=qp;mull+=qp;}
+  per.forEach(x=>total+=x.q);return{total,per,detail,mull};}
+ const UAeff=(loadAt(32).total-loadAt(16).total)/16,rpm=curRpm();
+ const fanEvap=v('evFanW'),fanCond=v('cdFanW'),evLink=txt('evFanLink'),cdLink=txt('cdFanLink');
+ const boardW=v('boardW'),lightW=v('lightW'),lightRT=v('lightRT')/100,asW=v('asW'),asRT=v('asRT')/100,ecW=v('ecW'),ecRT=v('ecRT')/100;
+ const dfWh=v('dfW')*(v('dfMin')/60),dfInt=Math.max(.1,v('dfInt'));
+ function energyAt(Tamb){const Tc=Tamb+v('cdApp');
+  // rear static condenser: instantaneous heat rejection from the map (independent of load/run-time) sets the back-channel air rise
+  let backRise=0;
+  if(condType==='staticwire'){const teArr=S.arch==='single'?[Math.min(...S.comps.map(c=>teOf(c)))]:S.comps.map(c=>teOf(c));
+   let Qc=0;teArr.forEach(Te=>{const m=mapInterp(rpm,Te,Tc);Qc+=Math.max(0,m.cap)+Math.max(0,m.pw);});backRise=channelRise(Qc,Tamb,chGap,Wback,Hback);}
+  const L=loadAt(Tamb,backRise);let loops;
+  if(S.arch==='single'){const Te=Math.min(...S.comps.map(c=>teOf(c)));loops=[{name:'system',Q:L.total,Te}];}
+  else loops=L.per.map(p=>({name:p.name,Q:p.q,Te:p.Te}));
+  let compEC=0,maxRT=0,loopRes=[];loops.forEach(lp=>{const m=mapInterp(rpm,lp.Te,Tc),beta=lp.Q/Math.max(1,m.cap);compEC+=m.pw*beta*24;maxRT=Math.max(maxRT,beta);
+   loopRes.push({name:lp.name,Te:lp.Te,Tc,cap:m.cap,pw:m.pw,cop:m.cop,beta,oor:m.oor,Q:lp.Q});});
+  const fanEC=(evLink==='cont'?24:24*maxRT)*fanEvap+(cdLink==='cont'?24:24*maxRT)*fanCond;
+  const circEC=S.comps.reduce((s2,c)=>s2+((c.fan&&c.fan.on)?c.fan.W*(c.fan.link==='cont'?24:24*maxRT):0),0);
+  const boardEC=boardW*24,lightEC=lightW*24*lightRT,asEC=asW*24*asRT,ecEC=ecW*24*ecRT,dfEC=(dfWh/dfInt)*24;
+  const total=compEC+fanEC+circEC+boardEC+lightEC+asEC+ecEC+dfEC;
+  return{Tamb,Tc,Qtot:L.total,loops:loopRes,maxRT,compEC,fanEC,circEC,boardEC,lightEC,asEC,ecEC,dfEC,total,detail:L.detail,mull:L.mull,backRise};}
+ const ambs=txt('ambList').split(',').map(x=>parseFloat(x)).filter(x=>!isNaN(x));const perf=ambs.map(energyAt);
+ const E16=energyAt(16).total/1000,E32=energyAt(32).total/1000,frozenOnly=S.comps.every(c=>TYPES[c.type].grp==='frozen'),Lf=frozenOnly?0.9:1,Edaily=.5*(E16+E32),AE=365*Edaily/Lf;
+ const types=new Set(S.comps.map(c=>c.type)),Vfr=S.comps.filter(c=>['star3','freezer'].includes(c.type)).reduce((s,c)=>s+c._net,0),frzf=Vfr/Vtot;
+ let C;if(types.size<=1)C=1;else if(Vfr>0)C=frzf<=.3?1.3+.87*frzf:frzf<.7?1.87-1.0275*frzf:1.15;else C=1.15;
+ const D_=Dfac(Math.round(v('ndoors')));let SAE=0;S.comps.forEach(c=>{const T=TYPES[c.type];SAE+=C*D_*Ac(T.grp,auto)*Bc*(c._net/Vtot)*(T.Nc+Vtot*rc(c.Ttgt)*T.Mc);});
+ const EEI=AE/SAE*100,[cls,cssv]=classOf(EEI);
+ const vols=S.comps.map(c=>({name:c.name,gross:c._gross,net:c._net,Tc:TYPES[c.type].Tc}));
+ const cabInternal=Vext*1000-Vfoam*1000-Vmr*1000; // L available inside walls
+ return{Vgross:Vint*1000,Vnet:Vtot,Vfoam:Vfoam*1000,foamMass,doorFoam,doorFoamTotal,foamTotal,UAeff,perf,AE,SAE,EEI,cls,cssv,rpm,vols,cabInternal,Vmr:Vmr*1000,E16,E32,Edaily,Lf};}
+
+//===== schematic with refrigerant circuit =====
+function renderSchematic(){const W=v('extW');const svg=document.getElementById('cabSvg');if(!svg)return;
+ const bx=34,by=20,bw=112,bh=252,mrD=v('mrD'),D=v('extD'),mh=Math.min(58,bh*0.12),dd=Math.min(56,bw*(mrD/Math.max(D,1)));
+ const totH=S.comps.reduce((s,c)=>s+c.H,0)||1;let yy=by;const parts=[];S.comps.forEach(c=>{const ph=bh*(c.H/totH);parts.push({c,y:yy,h:ph});yy+=ph;});
+ const serialTe=Math.min(...S.comps.map(c=>teOf(c)));let coldIdx=0;S.comps.forEach((c,i)=>{if(c.Ttgt<S.comps[coldIdx].Ttgt)coldIdx=i;});
+ let g=`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="4" class="wall"/>`;
+ parts.forEach(p=>{const showTe=S.arch==='single'?serialTe:teOf(p.c);
+  g+=`<rect x="${bx+8}" y="${p.y+4}" width="${bw-16}" height="${p.h-8}" rx="2" class="liner"/>`;
+  g+=`<text x="${bx+bw/2+18}" y="${p.y+p.h/2-1}" text-anchor="middle" class="dimlbl" style="font-size:8px">${p.c.name}</text>`;
+  g+=`<text x="${bx+bw/2+18}" y="${p.y+p.h/2+8}" text-anchor="middle" class="dimlbl" style="fill:var(--cyan);font-size:7px">${p.c.Ttgt}° · Te${showTe}</text>`;});
+ g+=`<rect x="${bx+bw-dd}" y="${by+bh-mh}" width="${dd}" height="${mh}" class="mr"/>`;
+ // evaporator coil inside coldest compartment (cold / blue)
+ const ep=parts[coldIdx],evX=bx+13,evY0=ep.y+ep.h*0.28,evY1=Math.min(ep.y+ep.h-6,ep.y+ep.h*0.78),evW=16;
+ let evp=`M ${evX} ${evY0}`;for(let k=0;k<=4;k++)evp+=` L ${evX+(k%2?evW:0)} ${evY0+(evY1-evY0)*k/4}`;
+ g+=`<path d="${evp}" class="coil coil-cold"/>`;
+ // compressor in machine room
+ const Cx=bx+bw-dd/2,Cy=by+bh-mh/2;
+ g+=`<circle cx="${Cx}" cy="${Cy}" r="9" fill="#2c3e50" stroke="#11202f" stroke-width="1.2"/><text x="${Cx}" y="${Cy+2.5}" text-anchor="middle" fill="#fff" style="font-size:7px;font-family:var(--mono)">C</text>`;
+ // condenser zigzag on the right (hot / red)
+ const cdX=bx+bw+34,cdY0=by+34,cdY1=by+126,cdW=12;
+ let cdp=`M ${cdX} ${cdY0}`;for(let k=0;k<=5;k++)cdp+=` L ${cdX+(k%2?cdW:0)} ${cdY0+(cdY1-cdY0)*k/5}`;
+ g+=`<path d="${cdp}" class="coil coil-hot"/>`;
+ const Tc=(parseFloat(txt('designAmb'))||32)+v('cdApp');
+ g+=`<text x="${cdX+cdW+1}" y="${cdY0-4}" class="dimlbl" style="fill:#e23b1e;font-size:7px">condenser</text>`;
+ g+=`<text x="${cdX+cdW+1}" y="${cdY0+5}" class="dimlbl" style="fill:#e23b1e;font-size:7px">Tc ${Tc.toFixed(0)}°</text>`;
+ g+=`<text x="${evX+evW+2}" y="${(evY0+evY1)/2}" class="dimlbl" style="fill:#2f7fd2;font-size:6.5px">evap Te${S.arch==='single'?serialTe:teOf(ep.c)}</text>`;
+ // refrigerant loop (animated, coloured by state)
+ g+=`<path d="M ${Cx} ${Cy-9} L ${Cx} ${cdY0-14} L ${cdX} ${cdY0-14} L ${cdX} ${cdY0}" class="rl rl-hot"/>`;          // discharge: hot gas
+ g+=`<path d="M ${cdX} ${cdY1} L ${cdX} ${cdY1+18} L ${evX-7} ${cdY1+18} L ${evX-7} ${evY0} L ${evX} ${evY0}" class="rl rl-warm"/>`; // liquid -> capillary
+ g+=`<path d="M ${evX} ${evY1} L ${evX-12} ${evY1} L ${evX-12} ${Cy} L ${Cx-9} ${Cy}" class="rl rl-suc"/>`;            // suction: cold vapour
+ // legend
+ g+=`<g style="font-size:6.5px" font-family="var(--mono)">
+  <line x1="${bx}" y1="288" x2="${bx+10}" y2="288" class="rl rl-hot"/><text x="${bx+12}" y="290" class="dimlbl">hot gas</text>
+  <line x1="${bx+58}" y1="288" x2="${bx+68}" y2="288" class="rl rl-warm"/><text x="${bx+70}" y="290" class="dimlbl">liquid</text>
+  <line x1="${bx+108}" y1="288" x2="${bx+118}" y2="288" class="rl rl-suc"/><text x="${bx+120}" y="290" class="dimlbl">suction</text></g>`;
+ if(txt('condType')==='skin'){if(S.skin.back)g+=`<line x1="${bx+2}" y1="${by+4}" x2="${bx+2}" y2="${by+bh-4}" class="cond"/>`;if(S.skin.left)g+=`<line x1="${bx+4}" y1="${by+2}" x2="${bx+bw-4}" y2="${by+2}" class="cond"/>`;}
+ [by+55,by+150,by+215].forEach(yp=>{g+=`<line x1="${bx-13}" y1="${yp}" x2="${bx}" y2="${yp}" class="heatflow"/>`;});
+ g+=`<text x="${bx-22}" y="${by+4}" class="dimlbl" style="fill:var(--heat)">Q→</text>`;
+ svg.innerHTML=g;}
+
+//===== wall cross-section (temperature profile through layers) =====
+const SURFKEY={left:'side',right:'side',door:'door',back:'back',top:'top',bottom:'bot'};
+function renderXwallSel(){const sel=document.getElementById('xwallSel');if(!sel)return;const cur=sel.value;
+ let o='';S.comps.forEach((c,ci)=>['door','left','right','back','top','bottom'].forEach(s=>{const val=`${ci}|${s}`;o+=`<option value="${val}" ${val===cur?'selected':''}>${c.name} · ${s}</option>`;}));
+ sel.innerHTML=o;if(!cur)sel.value=`${S.xwall.ci}|${S.xwall.s}`;}
+function renderXsec(){const svg=document.getElementById('xsecSvg');if(!svg)return;
+ const ci=Math.min(S.xwall.ci,S.comps.length-1),s=S.xwall.s,c=S.comps[ci];if(!c)return;
+ const t=c.pu[SURFKEY[s]],kpu=v('puK'),kl=v('linerK'),ks=v('shellK'),ts=v('shellT'),hout=v('hout');
+ const linThis=(s==='door'?(c.doorLiner??v('linerT')):(c.liner??v('linerT')));
+ const grp=TYPES[c.type].grp,hinFix=grp==='frozen'?v('hinFRZ'):v('hinFF'),forced=(S.defrost==='nofrost'||(c.fan&&c.fan.on))?hinFix:null;
+ // internal (stacked) interface?
+ let adj=null;if(s==='bottom'&&ci<S.comps.length-1)adj=S.comps[ci+1];if(s==='top'&&ci>0)adj=S.comps[ci-1];
+ const dAmb=parseFloat(txt('designAmb'))||32;let Tout=dAmb;
+ if(adj){Tout=adj.Ttgt;}
+ else{if(txt('condType')==='staticwire'&&s==='back'){const Tc=dAmb+v('cdApp'),teArr=S.arch==='single'?[Math.min(...S.comps.map(teOf))]:S.comps.map(teOf);let Qc=0;teArr.forEach(Te=>{const m=mapInterp(curRpm(),Te,Tc);Qc+=Math.max(0,m.cap)+Math.max(0,m.pw);});Tout=dAmb+channelRise(Qc,dAmb,(v('chanGap')/1000)||0.032,(v('extW')/1000),S.comps.reduce((s2,cc)=>s2+cc.H/1000,0));}
+  if(txt('condType')==='skin'&&S.skin[s])Tout=Math.max(Tout,v('panelTemp'));}
+ const Tin=c.Ttgt;
+ const vp=adj?null:S.vips.find(p=>p.comp===ci&&p.surf===s);const vt=vp?vp.t:0,vk=vp?vp.k:0.004;const pu=Math.max(0,t-vt);
+ const layers=[];
+ if(adj){const linAdj=adj.liner??v('linerT');layers.push({n:adj.name.slice(0,8)+' liner',th:linAdj,k:kl,col:'#dfe7ee'});layers.push({n:'PU foam',th:pu,k:kpu,col:'#bfe0ee'});layers.push({n:'liner',th:linThis,k:kl,col:'#dfe7ee'});}
+ else{layers.push({n:'steel',th:ts,k:ks,col:'#9aa7b3'});if(vp)layers.push({n:'VIP',th:vt,k:vk,col:'#c9b8ec'});layers.push({n:'PU foam',th:pu,k:kpu,col:'#bfe0ee'});layers.push({n:'liner',th:linThis,k:kl,col:'#dfe7ee'});}
+ const Rsolid=layers.reduce((s2,L)=>s2+(L.th/1000)/L.k,0);
+ const AIR={nu:1.5e-5,al:2.1e-5,k:0.026,Pr:0.71,g:9.81},SIG=5.67e-8,EPS=0.9;
+ const hC=(dT,Lc,TfK)=>{const Ra=AIR.g*(1/TfK)*Math.abs(dT)*Math.pow(Lc,3)/(AIR.nu*AIR.al);return Math.max(0.5,Math.pow(0.825+0.387*Math.pow(Ra,1/6)/Math.pow(1+Math.pow(0.492/AIR.Pr,9/16),8/27),2)*AIR.k/Lc);};
+ const hR=(a,b)=>EPS*SIG*(a*a+b*b)*(a+b);
+ const adjHinFix=adj?(TYPES[adj.type].grp==='frozen'?v('hinFRZ'):v('hinFF')):0;
+ const forcedOuter=adj&&forced?adjHinFix:null;
+ let hi=forced||hinFix,ho=adj?(forced?adjHinFix:8):hout;
+ if(S.hmodel==='computed'){for(let k=0;k<6;k++){const U=1/(1/hi+Rsolid+1/ho),Q=U*(Tout-Tin),Tso=Tout-Q/ho,Tsi=Tin+Q/hi;
+   ho=forcedOuter?forcedOuter:hC(Math.abs(Tout-Tso),1.0,(Tout+Tso)/2+273)+hR(Tso+273,Tout+273);hi=forced?forced:hC(Math.abs(Tsi-Tin),1.0,(Tin+Tsi)/2+273)+hR(Tsi+273,Tin+273);}}
+ else{ho=adj?(forcedOuter||adjHinFix):hout;}
+ const U=1/(1/hi+Rsolid+1/ho),Q=U*(Tout-Tin);
+ // interface temps from outer air inward
+ const Ts=[Tout];Ts.push(Tout-Q/ho); // outer surface
+ layers.forEach(L=>Ts.push(Ts[Ts.length-1]-Q*(L.th/1000)/L.k));
+ Ts.push(Ts[Ts.length-1]-Q/hi); // inner air (≈Tin)
+ // geometry
+ const X0=14,X1=346,Y0=22,Y1=180,filmW=42;
+ const solidW=(X1-X0)-2*filmW,nL=layers.length,minW=14,rem=Math.max(0,solidW-nL*minW),sumTh=layers.reduce((a,L)=>a+L.th,0)||1;
+ const w=layers.map(L=>minW+rem*L.th/sumTh);
+ const Tmax=Math.max(Tout,Tin)+3,Tmin=Math.min(Tout,Tin)-3,yT=T=>Y0+(Tmax-T)/(Tmax-Tmin)*(Y1-Y0);
+ let g=`<defs><pattern id="hatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="6" stroke="#7d8a97" stroke-width="0.8"/></pattern></defs>`;
+ // outer film region (ambient, or adjacent compartment for an internal partition)
+ g+=`<rect x="${X0}" y="${Y0}" width="${filmW}" height="${Y1-Y0}" fill="${adj?'#e4eefb':'#fbf0dd'}"/>`;
+ if(!adj)[0.3,0.5,0.7].forEach(f=>{const yy=Y0+(Y1-Y0)*f;g+=`<line x1="${X0-2}" y1="${yy}" x2="${X0+filmW-6}" y2="${yy}" stroke="#dc8722" stroke-width="1.6" marker-end="url(#ah)"/>`;});
+ g=`<defs><marker id="ah" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#dc8722"/></marker></defs>`+g;
+ let x=X0+filmW;const xs=[X0,x];
+ layers.forEach((L,idx)=>{g+=`<rect x="${x}" y="${Y0}" width="${w[idx]}" height="${Y1-Y0}" fill="${L.col}" stroke="#9aa7b3" stroke-width="0.7"/><rect x="${x}" y="${Y0}" width="${w[idx]}" height="${Y1-Y0}" fill="url(#hatch)" opacity="0.5"/>`;
+  g+=`<text x="${x+w[idx]/2}" y="${Y1+13}" text-anchor="middle" class="dimlbl" style="font-size:8px">${L.n}</text><text x="${x+w[idx]/2}" y="${Y1+22}" text-anchor="middle" class="dimlbl" style="font-size:7px;fill:var(--faint)">${L.th}mm</text>`;
+  x+=w[idx];xs.push(x);});
+ // inner film
+ g+=`<rect x="${x}" y="${Y0}" width="${X1-x}" height="${Y1-Y0}" fill="#ddeef5"/>`;xs.push(X1);
+ // border
+ g+=`<rect x="${X0}" y="${Y0}" width="${X1-X0}" height="${Y1-Y0}" fill="none" stroke="var(--line)" stroke-width="1"/>`;
+ // temperature polyline: points at xs[] vs Ts[]
+ const pts=xs.map((xx,i)=>`${xx},${yT(Ts[i]).toFixed(1)}`).join(' ');
+ g+=`<polyline points="${pts}" fill="none" stroke="#d23b1e" stroke-width="2.5"/>`;
+ xs.forEach((xx,i)=>{g+=`<circle cx="${xx}" cy="${yT(Ts[i]).toFixed(1)}" r="2.2" fill="#d23b1e"/>`;});
+ // labels
+ g+=`<text x="${X0+filmW/2}" y="${Y0-7}" text-anchor="middle" class="dimlbl" style="fill:${adj?'var(--cyan)':'var(--heat)'};font-size:8px">${adj?adj.name.slice(0,9)+' '+Tout.toFixed(0)+'°':'amb '+Tout.toFixed(0)+'°'}</text>`;
+ g+=`<text x="${(x+X1)/2}" y="${Y0-7}" text-anchor="middle" class="dimlbl" style="fill:var(--cyan);font-size:8px">${c.name} ${Tin}°</text>`;
+ g+=`<text x="${X0+2}" y="${yT(Ts[0])-4}" class="dimlbl" style="fill:#d23b1e;font-size:9px">T</text>`;
+ svg.innerHTML=g;
+ const note=document.getElementById('xsecNote');if(note)note.innerHTML=adj?`<b>Internal partition (mullion)</b> — boundary is the adjacent <b>${adj.name}</b> at ${Tout}°, not ambient. Construction liner–PU–liner, <b>no steel shell</b>; both films are inner. U <b>${U.toFixed(3)}</b> W/m²K · flux <b>${Q.toFixed(1)}</b> W/m². This interface is counted once as the mullion, never against ambient.`:`Outer h <b>${ho.toFixed(2)}</b>, inner h <b>${hi.toFixed(2)}</b> W/m²K (${S.hmodel}${forced?', inner forced':''}) · wall U <b>${U.toFixed(3)}</b> W/m²K · heat flux <b>${Q.toFixed(1)}</b> W/m²${vp?` · VIP ${vt}mm displaces foam → PU ${pu.toFixed(0)}mm`:''}. Steepest drop is across the foam/VIP (lowest k).`;}
+
+//===== render =====
+function renderAll(){const r=compute();const dAmb=parseFloat(txt('designAmb'))||32;const ref=r.perf.reduce((a,b)=>Math.abs(b.Tamb-dAmb)<Math.abs(a.Tamb-dAmb)?b:a,r.perf[0]);
+ document.getElementById('modeTag').textContent=`${S.arch==='single'?'single-evaporator':'dual-loop'} · ${S.comp} · ${r.rpm} rpm`;
+ // condenser conditional fields
+ document.getElementById('staticWrap').style.display=txt('condType')==='staticwire'?'block':'none';
+ {const w=document.getElementById('asCondWrap');if(w)w.style.display=S.asCond?'block':'none';}
+ document.getElementById('skinWrap').style.display=txt('condType')==='skin'?'block':'none';
+ // live panel
+ document.getElementById('liveAmb').textContent='@ '+ref.Tamb+'°C';
+ document.getElementById('classbadge').style.display=S.mode==='energy'?'flex':'none';
+ document.getElementById('scale').style.display=S.mode==='energy'?'block':'none';
+ if(S.mode==='energy'){const bc=document.getElementById('bigClass');bc.textContent=r.cls;bc.style.background=`var(${r.cssv})`;
+  document.getElementById('eeiVal').textContent=r.EEI.toFixed(1);document.getElementById('aeVal').textContent=`AE ${r.AE.toFixed(0)} · SAE ${r.SAE.toFixed(0)} kWh/a`;
+  const bands=[['A','--A','≤41'],['B','--B','42–51'],['C','--C','52–64'],['D','--D','65–80'],['E','--E','81–100'],['F','--F','101–125'],['G','--G','>125']];
+  document.getElementById('scale').innerHTML=bands.map(([l,vv,rng])=>{const act=l===r.cls;return `<div class="bar ${act?'active':'dim'}"><span class="ltr" style="background:var(${vv})">${l}</span><span class="arrow" style="border-left:9px solid var(${vv})"></span><span class="rng">${rng}${act?' ◄':''}</span></div>`;}).join('');}
+ document.getElementById('kLoad').textContent=`${ref.Qtot.toFixed(1)} W`;
+ document.getElementById('kDuty').textContent=`${(ref.maxRT*100).toFixed(0)} %`;
+ document.getElementById('kEday').textContent=`${ref.total.toFixed(0)} Wh`;
+ {const cr=document.getElementById('kChan');if(cr)cr.remove();
+  if(txt('condType')==='staticwire'&&ref.backRise!=null){const div=document.createElement('div');div.className='lk';div.id='kChan';
+   div.innerHTML=`<span>Back-channel rise</span><span class="v">+${ref.backRise.toFixed(1)} K → ${(ref.Tamb+ref.backRise).toFixed(0)}°</span>`;
+   document.getElementById('kEday').closest('.lk').after(div);}}
+ document.getElementById('kVol').textContent=`${r.Vnet.toFixed(0)} L`;
+ document.getElementById('kFoam').textContent=`${r.foamTotal.toFixed(2)} kg`;
+ const hiAmb=({SN:32,N:32,ST:38,T:43})[txt('climate')];const hp=r.perf.find(p=>Math.abs(p.Tamb-hiAmb)<3)||r.perf.at(-1);const lf=document.getElementById('liveFlag');
+ if(hp&&hp.maxRT>1)lf.innerHTML=`<div class="lflag warn"><span class="ic">!</span>Undersized at ${hiAmb}°C — run-time ${(hp.maxRT*100).toFixed(0)}%.</div>`;
+ else if(hp&&hp.maxRT>.85)lf.innerHTML=`<div class="lflag warn"><span class="ic">!</span>Tight at ${hiAmb}°C — run-time ${(hp.maxRT*100).toFixed(0)}%.</div>`;
+ else lf.innerHTML=`<div class="lflag ok"><span class="ic">✓</span>Capacity OK to ${hiAmb}°C.</div>`;
+ renderSchematic();
+ // results step tables
+ let pf=`<tr><th>Amb</th><th>Loop</th><th>Load</th><th>Cap</th><th>COP</th><th>RT%</th><th>E Wh</th></tr>`;
+ r.perf.forEach(p=>p.loops.forEach((l,li)=>{pf+=`<tr ${Math.abs(p.Tamb-ref.Tamb)<.5&&li===0?'class="hl"':''}><td>${li===0?p.Tamb:''}</td><td>${l.name}</td><td>${l.Q.toFixed(0)}</td><td>${l.cap.toFixed(0)}</td><td>${l.cop.toFixed(2)}</td><td>${(l.beta*100).toFixed(0)}</td><td>${li===0?p.total.toFixed(0):''}</td></tr>`;}));
+ const pt=document.getElementById('perfTbl');if(pt)pt.innerHTML=pf;
+ document.getElementById('eAmbTag').textContent='@ '+ref.Tamb+'°C';document.getElementById('opAmbTag').textContent='@ '+ref.Tamb+'°C';document.getElementById('qAmbTag').textContent='@ '+ref.Tamb+'°C';
+ const eb=document.getElementById('eBreak');if(eb)eb.innerHTML=`<tr><th>Component</th><th>Wh/24h</th><th>%</th></tr>`+[['Compressor',ref.compEC],['Fans',ref.fanEC],['Circulation fans',ref.circEC||0],['Board',ref.boardEC],['Light',ref.lightEC],['Anti-sweat',ref.asEC],['Evap-cover',ref.ecEC],['Defrost',ref.dfEC]].map(([k,x])=>`<tr><td>${k}</td><td>${x.toFixed(0)}</td><td>${(x/ref.total*100).toFixed(0)}</td></tr>`).join('')+`<tr class="tot"><td>Total</td><td>${ref.total.toFixed(0)}</td><td>100</td></tr>`;
+ const ot=document.getElementById('opTbl');if(ot)ot.innerHTML=`<tr><th>Loop</th><th>Te</th><th>Tc</th><th>Cap</th><th>COP</th></tr>`+ref.loops.map(l=>`<tr ${l.oor?'class="sub"':''}><td>${l.name}</td><td>${l.Te}</td><td>${l.Tc.toFixed(0)}</td><td>${l.cap.toFixed(0)}</td><td>${l.cop.toFixed(2)}</td></tr>`).join('');
+ const qb=document.getElementById('qBreak');if(qb){let qh=`<tr><th>Compartment / wall</th><th>Q W</th><th>%</th></tr>`;const tot=ref.Qtot;
+  ref.detail.forEach(d=>{qh+=`<tr class="hl"><td>${d.name}</td><td></td><td></td></tr>`;d.walls.forEach(w=>qh+=`<tr class="sub"><td>&nbsp;&nbsp;${w.s}</td><td>${w.q.toFixed(1)}</td><td>${(w.q/tot*100).toFixed(0)}</td></tr>`);
+   qh+=`<tr class="sub"><td>&nbsp;&nbsp;edge</td><td>${d.edge.toFixed(1)}</td><td>${(d.edge/tot*100).toFixed(0)}</td></tr><tr class="sub"><td>&nbsp;&nbsp;gasket</td><td>${d.gasket.toFixed(1)}</td><td>${(d.gasket/tot*100).toFixed(0)}</td></tr>`;});
+  qh+=`<tr class="sub"><td>mullion</td><td>${ref.mull.toFixed(1)}</td><td>${(ref.mull/tot*100).toFixed(0)}</td></tr><tr class="tot"><td>Total</td><td>${tot.toFixed(1)}</td><td>100</td></tr>`;qb.innerHTML=qh;}
+ const rt2=document.getElementById('rateTbl');if(rt2){const e16=r.E16,e32=r.E32,ed=r.Edaily;
+  rt2.innerHTML=`<tr><th>Quantity</th><th>Value</th><th>Basis</th></tr>`+
+   `<tr><td>Daily energy @ 16 °C</td><td>${(e16*1000).toFixed(0)} Wh</td><td>E₁₆</td></tr>`+
+   `<tr><td>Daily energy @ 32 °C</td><td>${(e32*1000).toFixed(0)} Wh</td><td>E₃₂</td></tr>`+
+   `<tr class="hl"><td>Daily energy (rating)</td><td>${(ed*1000).toFixed(0)} Wh</td><td>½·(E₁₆+E₃₂)</td></tr>`+
+   `<tr><td>Annual energy AE</td><td>${r.AE.toFixed(0)} kWh/a</td><td>365·E_daily${r.Lf!==1?' / '+r.Lf:''}</td></tr>`+
+   `<tr><td>Standard annual SAE</td><td>${r.SAE.toFixed(0)} kWh/a</td><td>Annex IV</td></tr>`+
+   `<tr class="tot"><td>EEI → class ${r.cls}</td><td>${r.EEI.toFixed(1)} %</td><td>AE/SAE·100</td></tr>`;}
+ const vt=document.getElementById('volTbl');if(vt){const sumG=r.vols.reduce((s,x)=>s+x.gross,0),sumN=r.vols.reduce((s,x)=>s+x.net,0);
+  let vh=`<tr><th>Compartment</th><th>Target °C</th><th>Gross L</th><th>Net L</th></tr>`;
+  r.vols.forEach(x=>vh+=`<tr><td>${x.name}</td><td>${x.Tc}</td><td>${x.gross.toFixed(1)}</td><td>${x.net.toFixed(1)}</td></tr>`);
+  vh+=`<tr class="tot"><td>Total compartments</td><td></td><td>${sumG.toFixed(1)}</td><td>${sumN.toFixed(1)}</td></tr>`;
+  const slack=r.cabInternal-sumG,fit=slack>=-2;
+  vh+=`<tr class="sub"><td>Cabinet space inside walls</td><td></td><td>${r.cabInternal.toFixed(0)}</td><td></td></tr>`;
+  vh+=`<tr class="sub"><td>${fit?'Unallocated (liner gaps)':'⚠ Over-allocated — reduce a height'}</td><td></td><td style="color:${fit?'var(--muted)':'var(--warn)'}">${slack.toFixed(0)}</td><td></td></tr>`;
+  const tgt=v('targetVol'),tgf=v('targetFrz');
+  if(tgt>0){const d=sumN-tgt,ok=Math.abs(d)/tgt<=0.03;vh+=`<tr class="sub"><td>Target net volume</td><td></td><td></td><td>${tgt.toFixed(0)}</td></tr><tr class="sub"><td>vs target</td><td></td><td></td><td style="color:${ok?'var(--ok)':'var(--warn)'}">${d>=0?'+':''}${d.toFixed(0)} L (${(d/tgt*100).toFixed(0)}%)</td></tr>`;}
+  if(tgf>0){const frz=r.vols.filter((x,i)=>TYPES[S.comps[i].type].grp==='frozen').reduce((s,x)=>s+x.net,0);const d=frz-tgf;vh+=`<tr class="sub"><td>Freezer net (achieved / target)</td><td></td><td></td><td>${frz.toFixed(0)} / ${tgf.toFixed(0)} L</td></tr>`;}
+  vt.innerHTML=vh;}
+ const put=document.getElementById('puTbl');if(put){let ph=`<tr><th>Compartment</th><th>side</th><th>top</th><th>bot</th><th>back</th><th>door</th><th>liner</th><th>door liner</th></tr>`;
+  S.comps.forEach(c=>ph+=`<tr><td>${c.name}</td><td>${c.pu.side}</td><td>${c.pu.top}</td><td>${c.pu.bot}</td><td>${c.pu.back}</td><td>${c.pu.door}</td><td>${c.liner??v('linerT')}</td><td>${c.doorLiner??v('linerT')}</td></tr>`);
+  put.innerHTML=ph+`<tr class="sub"><td colspan="8">Thicknesses in mm. Shell ${v('shellT')} mm, PU k ${v('puK')||0.0205} W/m·K.</td></tr>`;}
+ const vrt=document.getElementById('vipResTbl'),vhd=document.getElementById('vipHdr');
+ if(vrt){if(S.vips.length){vhd.style.display='block';let vih=`<tr><th>Compartment</th><th>Surface</th><th>W×H mm</th><th>t mm</th><th>k W/m·K</th><th>Qty</th></tr>`;
+   S.vips.forEach(p=>{const cn=(S.comps[p.comp]||{name:'?'}).name;vih+=`<tr><td>${cn}</td><td>${p.surf}</td><td>${p.W}×${p.H}</td><td>${p.t}</td><td>${p.k}</td><td>${p.qty||1}</td></tr>`;});
+   vrt.innerHTML=vih;}else{vhd.style.display='none';vrt.innerHTML='';}}
+ const ft=document.getElementById('foamTbl');if(ft){let fh=`<tr><th>Item</th><th>Volume L</th><th>Mass kg</th></tr>`;
+   fh+=`<tr><td>Cabinet walls</td><td>${(r.Vfoam).toFixed(1)}</td><td>${r.foamMass.toFixed(2)}</td></tr>`;
+   r.doorFoam.forEach(d=>fh+=`<tr><td>${d.name} door${d.glass?' (glass)':''}</td><td>${d.glass?'—':d.vol.toFixed(1)}</td><td>${d.glass?'no PU':d.mass.toFixed(2)}</td></tr>`);
+   fh+=`<tr class="tot"><td>Total PU foam</td><td>${(r.Vfoam+r.doorFoam.reduce((s,d)=>s+d.vol,0)).toFixed(1)}</td><td>${r.foamTotal.toFixed(2)}</td></tr>`;
+   ft.innerHTML=fh;}
+ const lt=document.getElementById('lbpTbl');if(lt){let l=`<tr><th>Fluid</th><th>q_e</th><th>ρ_suc</th><th>vol.cap</th><th>COP</th></tr>`;for(const n of['R600a','R290','R134a']){const c=cycleLBP(n,-23.3,54.4);l+=`<tr ${n===txt('refrig')?'class="hl"':''}><td>${n}</td><td>${c.qe.toFixed(0)}</td><td>${c.rho.toFixed(2)}</td><td>${c.volcap.toFixed(0)}</td><td>${c.COP.toFixed(2)}</td></tr>`;}lt.innerHTML=l;}
+}
+function updateTeCells(){const serial=S.arch==='single';const commonTe=Math.min(...S.comps.map(c=>teOf(c)));
+ document.querySelectorAll('.te-cell').forEach(td=>{const i=+td.dataset.ci,c=S.comps[i];if(!c)return;
+  const myTe=teOf(c),actualTe=serial?commonTe:myTe,eff=c.Ttgt-actualTe,definer=serial&&myTe===commonTe;
+  if(serial&&!definer)td.innerHTML=`${actualTe} <span style="color:var(--warn);font-size:9.5px">Δeff ${eff.toFixed(0)}K</span>`;
+  else td.innerHTML=`${actualTe}`;});
+ document.querySelectorAll('.appr-input').forEach(inp=>{const i=+inp.dataset.ci,c=S.comps[i];if(!c)return;
+  const definer=serial&&teOf(c)===commonTe,dis=serial&&!definer;
+  inp.disabled=dis;inp.style.opacity=dis?'0.4':'';inp.style.background=dis?'var(--panel2)':'';
+  inp.title=dis?'Inactive in serial — this compartment is cooled at the common (coldest) Te':'';});}
+function deriveInner(){const extW=v('extW'),extD=v('extD'),extH=v('extH'),sh=v('shellT'),n=S.comps.length,LD=v('linerT');
+ S.comps.forEach(c=>{const lin=c.liner??LD,dl=c.doorLiner??LD;
+  c.W=Math.round(extW-2*(c.pu.side+lin+sh));
+  c.D=Math.round(extD-(c.pu.back+lin+sh)-(c.pu.door+dl+sh));});
+ const top=S.comps[0],bot=S.comps[n-1];
+ const topWall=top.pu.top+(top.liner??LD)+sh,botWall=bot.pu.bot+(bot.liner??LD)+sh;
+ let mullSum=0;for(let i=0;i<n-1;i++){const a=S.comps[i],b=S.comps[i+1];mullSum+=(a.liner??LD)+((a.pu.bot+b.pu.top)/2)+(b.liner??LD);}
+ const avail=extH-topWall-botWall-mullSum;let others=0;for(let i=0;i<n-1;i++)others+=S.comps[i].H;
+ bot.H=Math.round(avail-others);renderGeo();recompute();}
+function renderFit(){const el=document.getElementById('fitChk');if(!el)return;const extH=v('extH'),sh=v('shellT'),n=S.comps.length,LD=v('linerT');
+ const top=S.comps[0],bot=S.comps[n-1];
+ const topWall=top.pu.top+(top.liner??LD)+sh,botWall=bot.pu.bot+(bot.liner??LD)+sh;
+ let mullSum=0;for(let i=0;i<n-1;i++){const a=S.comps[i],b=S.comps[i+1];mullSum+=(a.liner??LD)+((a.pu.bot+b.pu.top)/2)+(b.liner??LD);}
+ let compSum=0;S.comps.forEach(c=>compSum+=c.H);const used=topWall+botWall+mullSum+compSum,d=extH-used,ok=Math.abs(d)<=3;
+ el.innerHTML=`Height: ${compSum.toFixed(0)} comps + ${(topWall+botWall).toFixed(0)} top/bot + ${mullSum.toFixed(0)} mullion = <b>${used.toFixed(0)}</b> vs H₀ <b>${extH}</b> mm — <span style="color:${ok?'var(--ok)':'var(--warn)'}">${ok?'consistent ✓':(d>0?d.toFixed(0)+' mm unused':Math.abs(d).toFixed(0)+' mm over')}</span>`;}
+function renderCircFans(){const tb=document.getElementById('circFans');if(!tb)return;tb.innerHTML='';
+ S.comps.forEach((c,i)=>{if(!c.fan)c.fan={on:false,W:2,link:'rt'};const tr=document.createElement('tr');
+  tr.innerHTML=`<td style="white-space:nowrap">${c.name}</td>
+   <td style="text-align:center"><input type="checkbox" data-ci="${i}" data-cf="on" ${c.fan.on?'checked':''}></td>
+   <td><input type="number" value="${c.fan.W}" data-ci="${i}" data-cf="W" step="0.1" style="width:70px"></td>
+   <td><select data-ci="${i}" data-cf="link"><option value="rt"${c.fan.link==='rt'?' selected':''}>with compressor</option><option value="cont"${c.fan.link==='cont'?' selected':''}>continuously</option></select></td>`;
+  tb.appendChild(tr);});
+ tb.querySelectorAll('input,select').forEach(el=>el.onchange=e=>{const i=+e.target.dataset.ci,f=e.target.dataset.cf;
+  if(!S.comps[i].fan)S.comps[i].fan={on:false,W:2,link:'rt'};
+  S.comps[i].fan[f]=(f==='on')?e.target.checked:(f==='W')?+e.target.value:e.target.value;recompute();});}
+function recompute(){renderRpm();renderDesignAmb();updateTeCells();renderXwallSel();renderXsec();renderFit();renderCircFans();renderAll();}
+
+//===== stepper =====
+const STEPS=[['Appliance','What are we designing?'],['Compartments','Cold compartments, targets and loop temperatures'],['Cabinet','External envelope and machine room'],['Insulation','Walls, foam, VIP, edge & gasket'],['Cooling','Refrigerant, evaporator and condenser'],['Compressor','Your calorimeter map'],['Auxiliaries','Fans, electronics, heaters'],['Results','Performance, energy and rating']];
+let cur=0;
+function renderBar(){const bar=document.getElementById('stepbar');bar.innerHTML='';
+ STEPS.forEach((s,i)=>{const b=document.createElement('button');b.innerHTML=`<span class="num">${i+1}</span> ${s[0]}`;
+  if(i===cur)b.classList.add('on');else if(i<cur)b.classList.add('done');b.onclick=()=>goto(i);bar.appendChild(b);});}
+function goto(i){cur=Math.max(0,Math.min(STEPS.length-1,i));
+ document.querySelectorAll('.step').forEach(s=>s.classList.toggle('on',+s.dataset.step===cur));
+ document.getElementById('stEyebrow').textContent=`STEP ${cur+1} / ${STEPS.length}`;
+ document.getElementById('stTitle').textContent=STEPS[cur][0];document.getElementById('stDesc').textContent=STEPS[cur][1];
+ document.getElementById('btnBack').disabled=cur===0;
+ document.getElementById('btnNext').textContent=cur===STEPS.length-1?'Done':'Next →';
+ renderBar();window.scrollTo({top:0,behavior:'smooth'});recompute();}
+document.getElementById('btnBack').onclick=()=>goto(cur-1);
+document.getElementById('btnNext').onclick=()=>goto(cur+1);
+
+document.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',recompute));
+initSegs();renderTargets();renderGeo();renderVips();renderMap();renderRpm();renderBar();
+document.getElementById('ambList').value=ambientsFor('N').join(', ');
+goto(0);
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
+</body>
+</html>

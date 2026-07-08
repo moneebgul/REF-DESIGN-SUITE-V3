@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">RefDesign</string>
+    <string name="title_activity_main">RefDesign</string>
+    <string name="package_name">com.dawlance.refdesign</string>
+    <string name="custom_url_scheme">com.dawlance.refdesign</string>
+</resources>

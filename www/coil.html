@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RefDesign Coil — heat-exchanger sizing</title>
+<style>
+:root{--bg:#eef1f4;--panel:#fff;--panel2:#f5f8fa;--line:#dce2e8;--line2:#eaeef2;--ink:#11202f;--muted:#536579;--faint:#8a97a6;
+ --cyan:#0a7ea4;--cyan-s:#ddeff5;--ink-cyan:#075d77;--heat:#dc8722;--heat-s:#fbf0dd;--ok:#1d7a4b;--ok-s:#e7f4ed;--warn:#bb3b11;--warn-s:#fbe7e0;--cold:#2f7fd2;--cold-s:#e4eefb;
+ --mono:"SF Mono",ui-monospace,"Roboto Mono",Menlo,Consolas,monospace;--sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5}
+.app{max-width:1080px;margin:0 auto;padding:0 18px 70px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px 0 12px;border-bottom:2px solid var(--ink)}
+header.top .brand{display:flex;align-items:baseline;gap:9px}header.top h1{font-size:18px;margin:0;font-weight:750}header.top h1 b{color:var(--cyan)}
+header.top .tagline{font-size:11.5px;color:var(--faint);font-family:var(--mono)}
+.intro{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 15px;margin:14px 0;font-size:12.5px;color:var(--muted);line-height:1.6}
+.intro b{color:var(--ink)}
+.lay{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}@media(max-width:820px){.lay{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.card>h2{margin:0;font-size:13px;font-weight:700;padding:11px 15px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.card.evap>h2{background:var(--cold-s);color:var(--cold)}.card.cond>h2{background:var(--heat-s);color:var(--heat)}
+.card .body{padding:13px 15px}
+.field{margin:0 0 11px}.field.inline{display:grid;grid-template-columns:1fr 124px;align-items:center;gap:9px}
+.field>label{display:block;font-size:12.5px;font-weight:600;margin-bottom:4px}.field.inline>label{margin-bottom:0}
+.field>label .u{color:var(--faint);font-family:var(--mono);font-size:10.5px;font-weight:400;margin-left:4px}
+.field input,.field select{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+.field input:focus,.field select:focus{outline:2px solid var(--cyan-s);border-color:var(--cyan)}
+.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{flex:1;border:0;border-right:1px solid var(--line);background:#fff;padding:7px 5px;font-size:11.5px;color:var(--muted);cursor:pointer;font-family:var(--sans)}
+.seg button:last-child{border-right:0}.seg button.on{background:var(--cyan);color:#fff;font-weight:650}
+.subhead{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:14px 0 9px;padding-bottom:5px;border-bottom:1px solid var(--line2)}
+.out{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:11px 13px;margin-top:6px}
+.out .big{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.out .big .v{font-family:var(--mono);font-size:26px;font-weight:720}.out .big .l{font-size:12px;color:var(--muted)}
+.out.evap .big .v{color:var(--cold)}.out.cond .big .v{color:var(--heat)}
+.kv{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line2);font-size:12px}.kv:last-child{border-bottom:0}.kv .v{font-family:var(--mono);font-weight:650}
+.help{font-size:11px;color:var(--faint);margin-top:5px;line-height:1.5}
+.export{background:var(--panel);border:1px solid var(--line);border-radius:11px;margin-top:16px;overflow:hidden}
+.export>h2{margin:0;font-size:13px;font-weight:700;padding:11px 15px;border-bottom:1px solid var(--line);background:var(--panel2)}
+.export .body{padding:13px 15px}
+textarea{width:100%;height:96px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);font-family:var(--mono);font-size:11px;padding:9px;color:var(--ink);resize:vertical}
+.btn{border:1px solid var(--cyan);background:var(--cyan);color:#fff;border-radius:8px;padding:9px 16px;cursor:pointer;font-size:13px;font-weight:650;font-family:var(--sans);margin-top:9px}
+.btn.ghost{background:#fff;color:var(--cyan)}
+.flag{font-size:11.5px;padding:7px 10px;border-radius:7px;margin-top:9px;display:flex;gap:7px}.flag.warn{background:var(--warn-s);color:var(--warn)}.flag.ok{background:var(--ok-s);color:var(--ok)}
+.sci{max-width:760px}.eq{font-family:var(--mono);background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:6px;padding:9px 12px;margin:8px 0;font-size:11.5px;overflow-x:auto}
+.ref{font-size:11px;color:var(--faint);font-family:var(--mono);line-height:1.5}
+details>summary{cursor:pointer;font-size:12.5px;color:var(--cyan);font-weight:600;padding:6px 0}
+footer{margin-top:18px;font-size:10.5px;color:var(--faint);border-top:1px solid var(--line);padding-top:10px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><h1>RefDesign <b>Coil</b></h1><span class="tagline">UA-NTU heat-exchanger sizing · derives T<sub>e</sub> / T<sub>c</sub></span></div>
+    <div class="tagline" id="modeTag">—</div>
+  </header>
+
+  <div class="intro">Size the <b>evaporator</b> and <b>condenser</b> from coil geometry and air flow. The tool computes the air-side coefficient, surface efficiency, UA and the ε-NTU effectiveness, then returns the <b>approach temperature</b> and hence <b>T<sub>e</sub></b> and <b>T<sub>c</sub></b> for your actual coils — not assumed values. Export the result and import it into RefDesign so the energy model runs at your real operating point. This is a lumped UA-NTU model — a fast design-intent step, not a segmented coil simulator.</div>
+
+  <div class="lay">
+    <!-- EVAPORATOR -->
+    <div class="card evap"><h2>❄ Evaporator</h2><div class="body">
+      <div class="field inline"><label>Coil type</label><div class="seg" id="evMode"></div></div>
+      <div class="field inline"><label>Compartment air temp <span class="u">°C</span></label><input type="number" id="evTair" value="-18"></div>
+      <div class="field inline"><label>Design heat load Q <span class="u">W</span></label><input type="number" id="evQ" value="45"></div>
+      <div class="field inline" data-forced><label>Air flow <span class="u">m³/h</span></label><input type="number" id="evFlow" value="90"></div>
+      <div class="field inline" data-static style="display:none"><label>Natural-conv. h <span class="u">W/m²K</span></label><input type="number" id="evHnat" value="7"></div>
+      <div class="subhead">Coil geometry</div>
+      <div class="field inline"><label>Frontal W × H <span class="u">mm</span></label><div style="display:flex;gap:6px"><input type="number" id="evWf" value="200"><input type="number" id="evHf" value="180"></div></div>
+      <div class="field inline"><label>Depth (air path) <span class="u">mm</span></label><input type="number" id="evDep" value="40"></div>
+      <div class="field inline"><label>Fin pitch <span class="u">mm</span></label><input type="number" id="evPfin" value="6" step="0.5"></div>
+      <div class="field inline" data-forced><label>Tube OD / ID <span class="u">mm</span></label><div style="display:flex;gap:6px"><input type="number" id="evDo" value="8" step="0.5"><input type="number" id="evDi" value="7" step="0.5"></div></div>
+      <div class="field inline"><label>Tube pitch: transv × long <span class="u">mm</span></label><div style="display:flex;gap:6px"><input type="number" id="evPt" value="22"><input type="number" id="evPl" value="20"></div></div>
+      <details><summary>Advanced (fin & refrigerant side)</summary>
+        <div class="field inline"><label>Fin thickness <span class="u">mm</span></label><input type="number" id="evTfin" value="0.12" step="0.01"></div>
+        <div class="field inline"><label>Fin material k <span class="u">W/mK</span></label><input type="number" id="evKfin" value="200"></div>
+        <div class="field inline"><label>Refrigerant-side h <span class="u">W/m²K</span></label><input type="number" id="evHref" value="2000"></div>
+      </details>
+      <div class="out evap" id="evOut"></div>
+    </div></div>
+
+    <!-- CONDENSER -->
+    <div class="card cond"><h2>♨ Condenser</h2><div class="body">
+      <div class="field inline"><label>Coil type</label><div class="seg" id="cdMode"></div></div>
+      <div class="field inline"><label>Cooling air temp <span class="u">°C</span></label><input type="number" id="cdTair" value="43"></div>
+      <div class="field inline"><label>Heat rejection Q <span class="u">W</span></label><input type="number" id="cdQ" value="70"></div>
+      <div class="field"><div class="help">Q<sub>rej</sub> ≈ evaporator duty + compressor power ≈ Q<sub>evap</sub>·(1 + 1/COP). For the example above ≈ 45·(1+1/2.3) ≈ 65–70 W.</div></div>
+      <div class="field inline" data-forced><label>Air flow <span class="u">m³/h</span></label><input type="number" id="cdFlow" value="200"></div>
+      <div class="field inline" data-static style="display:none"><label>Natural-conv. h <span class="u">W/m²K</span></label><input type="number" id="cdHnat" value="8"></div>
+      <div class="subhead">Coil geometry</div>
+      <div class="field inline"><label>Frontal W × H <span class="u">mm</span></label><div style="display:flex;gap:6px"><input type="number" id="cdWf" value="300"><input type="number" id="cdHf" value="250"></div></div>
+      <div class="field inline"><label>Depth (air path) <span class="u">mm</span></label><input type="number" id="cdDep" value="44"></div>
+      <div class="field inline"><label>Fin pitch <span class="u">mm</span></label><input type="number" id="cdPfin" value="2" step="0.5"></div>
+      <div class="field inline" data-forced><label>Tube OD / ID <span class="u">mm</span></label><div style="display:flex;gap:6px"><input type="number" id="cdDo" value="7" step="0.5"><input type="number" id="cdDi" value="6.2" step="0.5"></div></div>
+      <div class="field inline"><label>Tube pitch: transv × long <span class="u">mm</span></label><div style="display:flex;gap:6px"><input type="number" id="cdPt" value="21"><input type="number" id="cdPl" value="19"></div></div>
+      <details><summary>Advanced (fin & refrigerant side)</summary>
+        <div class="field inline"><label>Fin thickness <span class="u">mm</span></label><input type="number" id="cdTfin" value="0.12" step="0.01"></div>
+        <div class="field inline"><label>Fin material k <span class="u">W/mK</span></label><input type="number" id="cdKfin" value="200"></div>
+        <div class="field inline"><label>Refrigerant-side h <span class="u">W/m²K</span></label><input type="number" id="cdHref" value="2500"></div>
+      </details>
+      <div class="out cond" id="cdOut"></div>
+    </div></div>
+  </div>
+
+  <!-- EXPORT -->
+  <div class="export"><h2>Export to RefDesign</h2><div class="body">
+    <div class="help" style="margin-bottom:8px">Copy this, then in RefDesign open the <b>Evap &amp; cond</b> step → <b>Import coil result</b> and paste. It sets the condenser approach and the coldest compartment's evaporator approach so RefDesign runs at these T<sub>e</sub>/T<sub>c</sub>.</div>
+    <textarea id="exportJson" readonly></textarea>
+    <button class="btn" id="copyBtn">Copy for RefDesign</button>
+    <button class="btn ghost" id="dlBtn">Download .json</button>
+    <span id="copyMsg" style="font-size:12px;color:var(--ok);margin-left:8px"></span>
+  </div></div>
+
+  <details class="export" style="margin-top:14px"><summary style="padding:12px 15px">Method &amp; references</summary><div class="body sci">
+    <div class="eq">UA = 1 / ( 1/(η₀·h_air·A_o) + 1/(h_ref·A_i) ) ;  NTU = UA/(ṁ_air·c_p) ;  ε = 1 − e^(−NTU)  [phase-change, C_r≈0]</div>
+    <div class="eq">approach = Q / (ε·ṁ_air·c_p)  →  T_e = T_air − approach (evap) ;  T_c = T_air + approach (cond)</div>
+    <div class="eq">static coil: approach = Q / (η₀·h_air·A_o)  [air = constant-temperature reservoir]</div>
+    <p class="ref">Air-side h from a Colburn j-factor for plain fin-and-tube (j ≈ 0.29·Re_Dc^−0.36, representative); fin efficiency η_f = tanh(mL)/mL, m = √(2h/k_fin·t_fin); surface efficiency η₀ = 1 − (A_fin/A_o)(1−η_f). Lumped UA-NTU — for circuiting, two-phase distribution and pressure drop use a segmented coil simulator. Validate against a reference coil's measured T_e/T_c before trusting on a new design.</p>
+  </div></details>
+
+  <footer>RefDesign Coil — lumped UA-NTU heat-exchanger sizing. Derives evaporator/condenser approach temperatures and T<sub>e</sub>/T<sub>c</sub> from coil geometry and air flow, for hand-off to the RefDesign energy model. Design-intent estimate; not a segmented coil simulator.</footer>
+</div>
+
+<script>
+const v=id=>{const e=document.getElementById(id);return e?parseFloat(e.value)||0:0;};
+let M={ev:'forced',cd:'forced'};
+function seg(id,key){const el=document.getElementById(id);el.innerHTML='';
+ [['forced','Fin-tube · forced'],['static','Static · natural']].forEach(([val,lab])=>{const b=document.createElement('button');b.textContent=lab;if(M[key]===val)b.classList.add('on');
+  b.onclick=()=>{M[key]=val;seg(id,key);toggleMode();calc();};el.appendChild(b);});}
+function toggleMode(){['ev','cd'].forEach(p=>{const f=M[p]==='forced';
+ document.querySelectorAll(`#${p==='ev'?'evMode':'cdMode'}`).length;});
+ // show/hide forced vs static fields within each card
+ [['ev','evap'],['cd','cond']].forEach(([p])=>{});
+ document.querySelectorAll('.card.evap [data-forced]').forEach(e=>e.style.display=M.ev==='forced'?'':'none');
+ document.querySelectorAll('.card.evap [data-static]').forEach(e=>e.style.display=M.ev==='static'?'grid':'none');
+ document.querySelectorAll('.card.cond [data-forced]').forEach(e=>e.style.display=M.cd==='forced'?'':'none');
+ document.querySelectorAll('.card.cond [data-static]').forEach(e=>e.style.display=M.cd==='static'?'grid':'none');}
+
+function airProps(Tc){const T=Tc+273.15;return{rho:352.98/T,cp:1005,k:0.0242,mu:1.72e-5,Pr:0.71};}
+function geomAreas(g){const mm=x=>x/1000;
+ const Wf=mm(g.Wf),Hf=mm(g.Hf),Dep=mm(g.Dep),p=mm(g.Pfin),tf=mm(g.Tfin),Do=mm(g.Do),Di=mm(g.Di),Pt=mm(g.Pt),Pl=mm(g.Pl);
+ const nFins=Math.max(1,Wf/p),tubesRow=Math.max(1,Math.round(Hf/Pt)),rows=Math.max(1,Math.round(Dep/Pl)),nTubes=tubesRow*rows;
+ const finPlate=Math.max(0,Hf*Dep-nTubes*Math.PI*Do*Do/4);
+ const Afin=2*nFins*finPlate,Atube=nTubes*Math.PI*Do*Math.max(0,Wf-nFins*tf),Ao=Afin+Atube;
+ const Ai=nTubes*Math.PI*Di*Wf,Aface=Wf*Hf;
+ const Amin=Math.max(0.05*Aface,(Hf-tubesRow*Do)*(Wf-nFins*tf)),sigma=Amin/Aface;
+ const finL=Math.max(0.004,(Pt-Do)/2);
+ return{nFins,nTubes,rows,Afin,Atube,Ao,Ai,Aface,sigma,finL};}
+function solveCoil(g,kind){const a=airProps(g.Tair),A=geomAreas(g);let hair,etaO,UA,approach,NTU,eps,Vface;
+ if(g.mode==='forced'){const Vdot=g.Flow/3600;Vface=Vdot/A.Aface;const Gmax=a.rho*Vdot/(A.Aface*A.sigma);
+  const Re=Gmax*(g.Do/1000)/a.mu,j=0.29*Math.pow(Math.max(1,Re),-0.36);hair=j*Gmax*a.cp/Math.pow(a.Pr,2/3);
+  const m=Math.sqrt(2*hair/(g.Kfin*(g.Tfin/1000))),mL=m*A.finL,ef=mL>0?Math.tanh(mL)/mL:1;etaO=1-(A.Afin/A.Ao)*(1-ef);
+  UA=1/(1/(etaO*hair*A.Ao)+1/(g.Href*A.Ai));const mc=a.rho*Vdot*a.cp;NTU=UA/mc;eps=1-Math.exp(-NTU);approach=g.Q/(eps*mc);}
+ else{hair=g.Hnat;const m=Math.sqrt(2*hair/(g.Kfin*(g.Tfin/1000))),mL=m*A.finL,ef=mL>0?Math.tanh(mL)/mL:1;etaO=A.Afin>0?1-(A.Afin/A.Ao)*(1-ef):1;
+  UA=etaO*hair*A.Ao;approach=g.Q/UA;NTU=null;eps=null;Vface=0;}
+ const Tref=kind==='evap'?g.Tair-approach:g.Tair+approach;
+ return{hair,etaO,UA,NTU,eps,approach,Tref,Vface,Ao:A.Ao,nTubes:A.nTubes,rows:A.rows,sigma:A.sigma};}
+
+let LAST={ev:null,cd:null};
+function calc(){
+ const ev={mode:M.ev,Tair:v('evTair'),Q:v('evQ'),Flow:v('evFlow'),Hnat:v('evHnat'),Wf:v('evWf'),Hf:v('evHf'),Dep:v('evDep'),Pfin:v('evPfin'),Do:v('evDo'),Di:v('evDi'),Pt:v('evPt'),Pl:v('evPl'),Tfin:v('evTfin'),Kfin:v('evKfin'),Href:v('evHref')};
+ const cd={mode:M.cd,Tair:v('cdTair'),Q:v('cdQ'),Flow:v('cdFlow'),Hnat:v('cdHnat'),Wf:v('cdWf'),Hf:v('cdHf'),Dep:v('cdDep'),Pfin:v('cdPfin'),Do:v('cdDo'),Di:v('cdDi'),Pt:v('cdPt'),Pl:v('cdPl'),Tfin:v('cdTfin'),Kfin:v('cdKfin'),Href:v('cdHref')};
+ const re=solveCoil(ev,'evap'),rc=solveCoil(cd,'cond');LAST.ev=re;LAST.cd=rc;
+ document.getElementById('modeTag').textContent=`evap ${M.ev} · cond ${M.cd}`;
+ document.getElementById('evOut').innerHTML=outHtml(re,'evap',ev.Tair,'T<sub>e</sub>');
+ document.getElementById('cdOut').innerHTML=outHtml(rc,'cond',cd.Tair,'T<sub>c</sub>');
+ const json={source:"RefDesign Coil",version:1,
+  evaporator:{Te:+re.Tref.toFixed(1),approach:+re.approach.toFixed(1),UA:+re.UA.toFixed(2),duty:ev.Q,Tair:ev.Tair,mode:ev.mode},
+  condenser:{Tc:+rc.Tref.toFixed(1),approach:+rc.approach.toFixed(1),UA:+rc.UA.toFixed(2),duty:cd.Q,Tair:cd.Tair,mode:cd.mode}};
+ document.getElementById('exportJson').value=JSON.stringify(json,null,1);}
+function outHtml(r,kind,Tair,sym){const big=`<div class="big"><span class="v">${sym} ${r.Tref.toFixed(1)}°C</span><span class="l">approach ${r.approach.toFixed(1)} K from ${Tair}°C air</span></div>`;
+ let rows=`<div class="kv"><span>Air-side h</span><span class="v">${r.hair.toFixed(0)} W/m²K</span></div>
+  <div class="kv"><span>Surface efficiency η₀</span><span class="v">${(r.etaO*100).toFixed(0)} %</span></div>
+  <div class="kv"><span>Coil UA</span><span class="v">${r.UA.toFixed(1)} W/K</span></div>
+  <div class="kv"><span>Air-side area A_o</span><span class="v">${r.Ao.toFixed(2)} m²</span></div>
+  <div class="kv"><span>Tubes × rows</span><span class="v">${r.nTubes} (${r.rows} row)</span></div>`;
+ if(r.NTU!=null)rows+=`<div class="kv"><span>NTU / ε</span><span class="v">${r.NTU.toFixed(2)} / ${(r.eps*100).toFixed(0)}%</span></div><div class="kv"><span>Face velocity</span><span class="v">${r.Vface.toFixed(2)} m/s</span></div>`;
+ let flag='';if(r.approach<1.5)flag=`<div class="flag warn">Very tight approach (${r.approach.toFixed(1)} K) — coil may be over-sized for this duty, or check inputs.</div>`;
+ else if(r.approach>20)flag=`<div class="flag warn">Large approach (${r.approach.toFixed(1)} K) — undersized coil; T${kind==='evap'?'e':'c'} is being pushed hard.</div>`;
+ else flag=`<div class="flag ok">Approach in a typical range for this coil class.</div>`;
+ return big+rows+flag;}
+
+document.getElementById('copyBtn').onclick=()=>{const t=document.getElementById('exportJson');t.select();
+ navigator.clipboard.writeText(t.value).then(()=>{document.getElementById('copyMsg').textContent='copied ✓';setTimeout(()=>document.getElementById('copyMsg').textContent='',2000);}).catch(()=>{document.getElementById('copyMsg').textContent='select & copy manually';});};
+document.getElementById('dlBtn').onclick=()=>{const blob=new Blob([document.getElementById('exportJson').value],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='coil-result.json';a.click();};
+document.querySelectorAll('input').forEach(e=>e.addEventListener('input',calc));
+seg('evMode','ev');seg('cdMode','cd');toggleMode();calc();
+</script>
+</body>
+</html>

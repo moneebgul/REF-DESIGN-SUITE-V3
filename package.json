@@ -1,0 +1,15 @@
+{
+  "name": "refdesign",
+  "version": "5.0.0",
+  "description": "RefDesign refrigerator cooling-system design tool",
+  "private": true,
+  "scripts": {
+    "sync": "cap sync android",
+    "open": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/core": "^6.2.1"
+  }
+}
